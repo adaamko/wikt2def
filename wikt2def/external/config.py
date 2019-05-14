@@ -1,4 +1,18 @@
 """
+Adapted from https://github.com/juditacs/wikt2dict/blob/master/wikt2dict/config.py
+
+Copyright (C) Judit Ács
+
+Permissions of this copyleft license are conditioned on making available 
+complete source code of licensed works and modifications under the same 
+license or the GNU GPLv3. Copyright and license notices must be preserved. 
+Contributors provide an express grant of patent rights. 
+However, a larger work using the licensed work through interfaces provided 
+by the licensed work may be distributed under different terms and without 
+source code for the larger work.
+"""
+
+"""
 This file contains all configuration necessary for wikt2dict.
 Each Wiktionary edition has a configuration class associated with it.
 Since Wiktionary editions tend to have similarities, these classes are
@@ -8,7 +22,7 @@ in a plain text configuration file, and I do apologize for it,
 but it's much easier to use a Python configuration and gives a whole
 lot of new features.
 """
-from article_parsers import DefaultArticleParser, LangnamesArticleParser, SectionAndArticleParser
+from .article_parsers import DefaultArticleParser, LangnamesArticleParser, SectionAndArticleParser
 import re
 from os import path, makedirs
 
@@ -613,6 +627,7 @@ class HungarianConfig(DefaultWiktionaryConfig):
     def __init__(self):
         self.full_name = 'Hungarian'
         self.wc = 'hu'
+        self.category_marker = 'Kategória'
         super(HungarianConfig, self).__init__()
 
 

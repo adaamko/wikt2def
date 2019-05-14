@@ -3,7 +3,7 @@ import argparse
 from urllib.request import urlretrieve
 from os import path
 from subprocess import call
-import config
+import external.config as config
 
 
 parser = argparse.ArgumentParser(description = "")
@@ -36,14 +36,14 @@ def get_wikicodes(wikicodes):
     return wc_set
 
 def print_definition(word, pos, definition, category, def_f):
-    if pos == "":
+    if not pos:
         pos = "-"
     pipe_idx = pos.find("|")
     if -1 < pipe_idx:
         pos = pos[:pipe_idx]
     
     categories = "\t".join(category)
-    if categories == "":
+    if not categories:
         categories = "-"
     
     if len(definition) == 0:
@@ -59,6 +59,7 @@ def extract_definitions(wc_set):
     definition = []
     category = []
     for cfg in to_parse:
+        category_marker = "[[{}".format(cfg.category_marker)
         with open(cfg.dump_path) as dump_f, open(cfg.def_path, "w") as def_f:
             for line in dump_f:
                 if line.startswith("%%#PAGE"):
@@ -70,8 +71,8 @@ def extract_definitions(wc_set):
                     word = line[8:-1]
                 if line.startswith("#"):
                     definition.append(line[1:-1])
-                if line.startswith("[[Kategória"):
-                    category.append(line[12:-3])
+                if line.startswith(category_marker):
+                    category.append(line[len(category_marker) + 1:-3])
                 if line.startswith("{{" + cfg.wc) and pos == "":
                     pos = line[5:-3]
             print_definition(word, pos, definition, category, def_f)
