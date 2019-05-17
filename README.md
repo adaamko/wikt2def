@@ -1,6 +1,6 @@
 # wikt2def
 
-This repository contains a tool for automatic extraction of wiktionary definitions. It heavily builds on https://github.com/juditacs.
+This repository contains a tool for automatic extraction of wiktionary definitions. It heavily builds on https://github.com/juditacs/wikt2dict.
 
 ## Usage 
 
