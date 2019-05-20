@@ -5,11 +5,12 @@ from flask import request
 from flask import jsonify
 from parser_wrapper import ParserWrapper
 
-arser = argparse.ArgumentParser(description = "")
+parser = argparse.ArgumentParser(description = "")
 parser.add_argument("-p", "--port", required=True, nargs="+", help="set port for the service", default=5005, type=int)
 parser.add_argument("-l", "--lang", required=True, nargs="+", help="set the parser's language", default="en")
 
 wrapper = ParserWrapper()
+args = parser.parse_args()
 
 app = Flask(__name__)
 
@@ -34,7 +35,7 @@ def parse():
             curr_dep.append([d, dep[2].index])
 
             dep_list.append(curr_dep)
-        sens_deps.append(dep_list)
+        sen_deps.append(dep_list)
     ret_value = {"deps": sen_deps}
 
     return jsonify(ret_value)
@@ -45,4 +46,4 @@ def main(language, port_to_run):
     app.run(port=port_to_run)
 
 if __name__ == '__main__':
-    main(args.lang, args.port)
+    main(args.lang[0], args.port[0])
