@@ -16,7 +16,7 @@ class StanfordParser():
         payload = {'json_payload': data_json}
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         r = requests.post(self.server, data=data_json, headers=headers)
-        
+
         deps = r.json()["deps"]
         corefs = []
         return deps, corefs

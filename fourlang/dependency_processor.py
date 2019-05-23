@@ -34,7 +34,6 @@ class Dependencies():
         self.index = defaultdict(lambda: (defaultdict(set), defaultdict(set)))
         deps = [(dep, tuple(w1), tuple(w2)) for dep, w1, w2 in deps]
         for triple in deps:
-            print(triple)
             self.add(triple)
 
     def remove(self, triple):
@@ -137,7 +136,6 @@ class DependencyProcessor():
         "'s", 'are', 'be', 'been', 'being', 'is', 's', 'was', 'were'])
 
     def process_coordination_stanford(self, deps):
-        print(deps.index.items())
         for word1, word_deps in deepcopy(list(deps.index.items())):
             for i in (0, 1):
                 for dep, words in word_deps[i].items():

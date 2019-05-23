@@ -1,7 +1,8 @@
 from collections import defaultdict
-from dependency_processor import DependencyProcessor
-from machine.operators import AppendOperator, AppendToNewBinaryOperator
-from machine.machine import Machine, Control, ConceptControl
+from .dependency_processor import DependencyProcessor
+from .operators import AppendOperator, AppendToNewBinaryOperator
+from .fourlang import FourLang
+from .concept import Concept
 
 import json
 import logging
@@ -30,7 +31,7 @@ class DepTo4lang():
                 dep = Dependency.create_from_line(l)
                 self.dependencies[dep.name].append(dep)
     
-    def apply_dep(self, dep, machine1, machine2):
+    def apply_dep(self, dep, concept1, concept2, graph):
         dep_type = dep['type']
         msd1 = dep['gov'].get('msd')
         msd2 = dep['dep'].get('msd')
@@ -42,9 +43,10 @@ class DepTo4lang():
                         dep_type))
             return False
         for dep in self.dependencies[dep_type]:
-            dep.apply(msd1, msd2, machine1, machine2)
+            dep.apply(msd1, msd2, concept1, concept2, graph)
 
     def get_machines_from_deps_and_corefs(self, dep_lists, corefs):
+        graph = FourLang()
         dep_lists = map(
                 self.dependency_processor.process_stanford_dependencies, dep_lists)
         coref_index = defaultdict(dict)
@@ -64,17 +66,17 @@ class DepTo4lang():
 
                     for lemma in (lemma1, lemma2):
                         if lemma not in mapped_dependencies:
-                            mapped_dependencies[lemma] = Machine(lemma, ConceptControl())
+                            mapped_dependencies[lemma] = Concept(lemma)
 
                     self.apply_dep(
-                        dep, mapped_dependencies[lemma1], mapped_dependencies[lemma2])
+                        dep, mapped_dependencies[lemma1], mapped_dependencies[lemma2], graph)
             except:
                 logging.error(u"failure on dep: {0}({1}, {2})".format(
                     dep, lemma1, lemma2))
                 traceback.print_exc()
                 raise Exception("adding dependencies failed")
 
-        return mapped_dependencies
+        return graph
 
 class Dependency():
     def __init__(self, name, patt1, patt2, operators=[]):
@@ -140,13 +142,13 @@ class Dependency():
                 return False
         return True
 
-    def apply(self, msd1, msd2, machine1, machine2):
+    def apply(self, msd1, msd2, concept1, concept2, graph):
         logging.debug(
             'trying {0} on {1} and {2}...'.format(self.name, msd1, msd2))
         if self.match(msd1, msd2):
             logging.debug('MATCH!')
             for operator in self.operators:
-                operator.act((machine1, machine2))
+                operator.act((concept1, concept2), graph)
 
 def main():
     pass

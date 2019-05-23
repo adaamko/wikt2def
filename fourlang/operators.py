@@ -1,4 +1,5 @@
-from machine import Machine
+from .concept import Concept
+
 
 class Operator(object):
     """The abstract superclass of the operator hierarchy."""
@@ -17,7 +18,7 @@ class Operator(object):
 
 class AppendOperator(Operator):
     """Appends a machine to another's partition: <tt>X, Y -> X[Y]</tt>."""
-    def __init__(self, X, Y, part=0, working_area=None):
+    def __init__(self, X, Y, part="0", working_area=None):
         """
         @param X index of the machine to whose partition Y will be appended.
         @param Y index of the machine to be appended.
@@ -28,9 +29,9 @@ class AppendOperator(Operator):
         self.Y = Y
         self.part = part
 
-    def act(self, seq):
-        seq[self.X].append(seq[self.Y], self.part)
-        return [seq[self.X]]
+    def act(self, seq, graph):
+        graph.connect_edges(seq[self.X], seq[self.Y], self.part)
+
 
 class AppendToBinaryOperator(Operator):
     """appends two machines to the partitions of a binary relation"""
@@ -51,21 +52,21 @@ class AppendToBinaryOperator(Operator):
         return "{0}: {1}({2}, {3})".format(
             type(self), self.bin_rel, self.first_pos, self.second_pos)
 
-    def act(self, seq):
+    def act(self, seq, graph):
         #logging.info("appending machines {0} and {1} to binary {2}".format(
         #    seq[self.first_pos], seq[self.second_pos], self.bin_rel))
-        self.bin_rel.append(seq[self.first_pos], 1)
-        self.bin_rel.append(seq[self.second_pos], 2)
-        return [self.bin_rel]
+        graph.connect_edges(self.bin_rel, seq[self.first_pos], "1")
+        graph.connect_edges(self.bin_rel, seq[self.second_pos], "2")
+
 
 class AppendToNewBinaryOperator(AppendToBinaryOperator):
     """will create a new binary machine every time it's used"""
 
-    def act(self, seq):
+    def act(self, seq, graph):
         # logging.info(
         #    "appending machines {0} and {1} to new binary {2}".format(
         #        seq[self.first_pos], seq[self.second_pos], self.bin_rel))
-        rel_machine = Machine(self.bin_rel)
-        rel_machine.append(seq[self.first_pos], 1)
-        rel_machine.append(seq[self.second_pos], 2)
-        return [rel_machine]
+        rel_concept = Concept(self.bin_rel)
+        graph.connect_edges(rel_concept, seq[self.first_pos], "1")
+        graph.connect_edges(rel_concept, seq[self.second_pos], "2")
+        
