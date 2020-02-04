@@ -4,6 +4,7 @@ from urllib.request import urlretrieve
 from os import path
 from subprocess import call
 import external.config as config
+from external.wiktionary import Wiktionary
 
 
 parser = argparse.ArgumentParser(description = "")
@@ -22,6 +23,11 @@ def download_wiktionaries(wc_set):
         call(['bzcat {0} | python3 {1} > {2}'.format(
             cfg.bz2_path, wiki_textify_path, cfg.dump_path)], shell=True)
 
+def extract_translations(wc_set):
+    to_parse = filter(lambda c: c.wc in wc_set, config.configs)
+    for cfg in to_parse:
+        wikt = Wiktionary(cfg)
+        wikt.parse_articles()
 
 def get_wikicodes(wikicodes):
     if len(wikicodes) == 1:
@@ -84,7 +90,8 @@ def main(download, definitions, wikicodes):
     if download:
         download_wiktionaries(wc_set)
     if definitions:
-        extract_definitions(wc_set)   
+        #extract_definitions(wc_set) 
+        extract_translations(wc_set)  
  
 if __name__ == '__main__':
     main(args.download, args.definitions, args.wikicodes)

@@ -166,13 +166,13 @@ class ParserConfig(DictLikeClass):
 
     def __init__(self, wikt_cfg=None, parser_cfg=None):
         self._skip_trans_re = None
-        for key, value in self.defaults.iteritems():
+        for key, value in self.defaults.items():
             self[key] = value
         if parser_cfg:
-            for key, value in parser_cfg.iteritems():
+            for key, value in parser_cfg.items():
                 self[key] = value
         if wikt_cfg:
-            for key, value in wikt_cfg.iteritems():
+            for key, value in wikt_cfg.items():
                 self[key] = value
 
     @property
@@ -199,8 +199,18 @@ class DefaultParserConfig(ParserConfig):
 
     def __init__(self, wikt_cfg=None, parser_cfg=None):
         self.defaults.update(default_parser_defaults)
-        self._trad_re = None
         super(DefaultParserConfig, self).__init__(wikt_cfg, parser_cfg)
+
+
+class EnglishParser(DefaultParserConfig):
+
+    def __init__(self, wikt_cfg=None, parser_cfg=None):
+        self.defaults.update(default_parser_defaults)
+        self.wc = 'en'
+        self._trad_re = None
+        self._def_re = None
+        self._lan_re = None
+        super(EnglishParser, self).__init__(wikt_cfg, parser_cfg)
 
     @property
     def trad_re(self):
@@ -211,6 +221,19 @@ class DefaultParserConfig(ParserConfig):
                                        r'(?:\|([^}|]*))*\}\}', re.UNICODE)  # rest
         return self._trad_re
 
+    @property
+    def lan_re(self):
+        if not self._lan_re:
+            #self._def_re = re.compile(r'==.*==')
+            self._lan_re = re.compile(r'\{\{en-.*\}\}')
+        return self._lan_re
+    
+    @property
+    def def_re(self):
+        if not self._def_re:
+            #self._def_re = re.compile(r'==.*==')
+            self._def_re = re.compile(r'(^\#) ({lb|en|.*)+(.*)',re.M|re.I)
+        return self._def_re
 
 class LangnamesParserConfig(ParserConfig):
 
@@ -514,7 +537,9 @@ class EnglishConfig(DefaultWiktionaryConfig):
         self.full_name = 'English'
         self.wc = 'en'
         super(EnglishConfig, self).__init__()
-
+        self._parser_configs = [
+            [DefaultArticleParser, EnglishParser, {}]
+        ]
 
 class GermanConfig(SectionLevelWiktionaryConfig):
 
@@ -798,7 +823,6 @@ class IndonesianConfig(FrenchConfig):
         super(IndonesianConfig, self).__init__()
         self.full_name = 'Indonesian'
         self.wc = 'id'
-
 
 configs = [
     BasqueConfig(),
