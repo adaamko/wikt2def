@@ -26,59 +26,43 @@ class SectionAndArticleParser(ArticleParser):
     translation table.
     """
 
-    def __init__(self, wikt_cfg, parser_cfg, filter_langs=None):
-        ArticleParser.__init__(self, wikt_cfg, parser_cfg, filter_langs)
-        self.read_section_langmap()
+    def extract_definitions(self, title, text):
+        definitions = []
+        group = None
+        section = None
+        for line in text.split("\n"):
+            lan_re = self.cfg.lan_re.match(line)
+            if lan_re:
+                group = lan_re.group()
+            get_section = self.cfg.section.match(line)
+            if get_section:
+                if get_section.group(1):
+                    section = get_section.group(1)
+                elif get_section.group(2):
+                    section = None
+            def_re = self.cfg.def_re.match(line)
 
-    def read_section_langmap(self):
-        """
-        The language of a section is determined based on its header.
-        The header may or may not use language names.
-        If a language name map is specified, then each section header
-        will be looked up in that map.
-        Otherwise wikicodes are used.
-        """
-        self.section_langmap = dict()
-        if self.cfg.section_langmap:
-            f = open(self.cfg.section_langmap)
-            for l in f:
-                fields = l.strip().decode('utf8').split('\t')
-                for langname in fields[1:]:
-                    self.section_langmap[langname] = fields[0]
-                    self.section_langmap[langname.title()] = fields[0]
-            f.close()
-        else:
-            self.section_langmap = dict([(wc, wc) for wc in self.wikt_cfg.wikicodes])
+            if def_re and group and section:
+                definition = def_re.group()
+                beg_match = self.cfg.beg_re.match(definition)
+                com_match = self.cfg.com_re.findall(definition)
+                if com_match:
+                    last_match = com_match[-1]
+                    split_def = definition.split(last_match)
+                    if len(split_def) > 1 and split_def[1].strip():
+                        definitions.append((title, group, self.trim_translation(split_def[1])))
+                else:
+                    split_def = definition.split(beg_match.group())
+                    definitions.append((title, group, self.trim_translation(split_def[1])))
 
-    def extract_translations(self, title, text):
-        translations = list()
-        for section_lang, section in self.get_sections(text):
-            for parser in self.wikt_cfg.section_parsers:
-                pairs = parser.extract_translations(title, section)
-                for p in pairs:
-                    if self.wikt_cfg.allow_synonyms is False and p[0] == section_lang:
-                        continue
-                    translations.extend([(section_lang, title, p[0], p[1])
-                                         for p in pairs])
-        return set(translations)
+        return definitions
 
-    def get_sections(self, text):
-        section_titles_i = list()
-        lines = text.split('\n')
-        for i, line in enumerate(lines):
-            m = self.cfg.section_re.search(line)
-            if m:
-                lang = m.group(self.cfg.section_langfield)
-                section_titles_i.append((i, lang))
-        if not section_titles_i:
-            return
-        for i, (ind, lang) in enumerate(section_titles_i[:-1]):
-            if lang in self.section_langmap:
-                yield self.section_langmap[lang], \
-                    '\n'.join(lines[ind:section_titles_i[i + 1][0]])
-        last_lang = section_titles_i[-1][1]
-        if last_lang in self.section_langmap:
-            yield self.section_langmap[last_lang], '\n'.join(lines[section_titles_i[-1][0]:])
+    def skip_word(self, word):
+        if self.cfg.skip_translation_re and self.cfg.skip_translation_re.search(word):
+            return True
+        if '\n' in word:
+            return True
+        return False
 
 
 class LangnamesArticleParser(ArticleParser):
@@ -195,17 +179,17 @@ class DefaultArticleParser(ArticleParser):
     def extract_definitions(self, title, text):
         definitions = []
         group = None
-        comments = re.compile(r'\{\{.*\}\}')
-        beginning = re.compile(r'^\# ')
         for line in text.split("\n"):
+
             lan_re = self.cfg.lan_re.match(line)
             if lan_re:
                 group = lan_re.group()
             def_re = self.cfg.def_re.match(line)
-            if def_re:
+
+            if def_re and group:
                 definition = def_re.group()
-                beg_match = beginning.match(definition)
-                com_match = comments.findall(definition)
+                beg_match = self.cfg.beg_re.match(definition)
+                com_match = self.cfg.com_re.findall(definition)
                 if com_match:
                     last_match = com_match[-1]
                     split_def = definition.split(last_match)

@@ -45,14 +45,14 @@ class ArticleParser(object):
 
     def build_trim_re(self):
         if self.cfg['trim_re']:
-            self.trim_re = re.compile(r'' + self.cfg['trim_re'].decode('utf8'), 
+            self.trim_re = re.compile(r'' + self.cfg['trim_re'], 
                                       re.UNICODE)
 
     def build_skip_re(self):
         if not self.cfg['skip_translation']:
             self.skip_translation_re = None
         else:
-            self.skip_translation_re = re.compile(r'' + self.cfg['skip_translation'].decode('utf8'), re.UNICODE)
+            self.skip_translation_re = re.compile(r'' + self.cfg['skip_translation'], re.UNICODE)
         if not self.cfg['skip_translation_line']:
             self.skip_translation_line_re = None
         else:
@@ -160,6 +160,7 @@ class ArticleParser(object):
         text = text.replace('}', '')
         text = text.replace('|', ',')
         text = text.replace("''", "")
+        text = text.replace("<[^>]*>", "")
         return text.strip()
 
 

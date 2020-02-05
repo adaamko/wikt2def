@@ -36,7 +36,7 @@ wiktionary_defaults = {
     'dump_path_base': path.join(base_dir, '../dat/wiktionary'),
     'dump_file_postfix': 'wiktionary.txt',
     'def_file_postfix' : 'def.txt',
-    'output_file': 'translation_pairs',
+    'output_file': 'definitions',
     'verbose_output': True,
     'triangle_threshold': 0,
     'triangle_dir': path.join(base_dir, '../dat/triangle'),
@@ -201,6 +201,51 @@ class DefaultParserConfig(ParserConfig):
         self.defaults.update(default_parser_defaults)
         super(DefaultParserConfig, self).__init__(wikt_cfg, parser_cfg)
 
+class GermanParser(DefaultParserConfig):
+
+    def __init__(self, wikt_cfg=None, parser_cfg=None):
+        self.defaults.update(default_parser_defaults)
+        self.wc = 'de'
+        self._trad_re = None
+        self._def_re = None
+        self._lan_re = None
+        self._beg_re = None
+        self._com_re = None
+        self._section = None
+        super(GermanParser, self).__init__(wikt_cfg, parser_cfg)
+
+    @property
+    def lan_re(self):
+        if not self._lan_re:
+            #self._def_re = re.compile(r'==.*==')
+            self._lan_re = re.compile(r'=== \{\{Wortart\|.*\|Deutsch\}\}(, \{\{.*\}\})* ===', re.M)
+        return self._lan_re
+    
+    @property
+    def def_re(self):
+        if not self._def_re:
+            #self._def_re = re.compile(r'==.*==')
+            self._def_re = re.compile(r'(^:\[[0-9]\]) (.*)',re.M|re.I)
+        return self._def_re
+
+    @property
+    def beg_re(self):
+        if not self._beg_re:
+            self._beg_re =  re.compile(r'^:\[[0-9]\] ')
+        return self._beg_re
+
+    @property
+    def com_re(self):
+        if not self._com_re:
+            self._com_re =  re.compile(r'\{\{.*\}\}')
+        return self._com_re
+
+    @property
+    def section(self):
+        if not self._section:
+            self._section = re.compile(r'(\{\{Bedeutungen\}\})|(^\{\{(?!Bedeutungen).*\}\}$)', re.M)
+        return self._section
+
 
 class EnglishParser(DefaultParserConfig):
 
@@ -210,6 +255,9 @@ class EnglishParser(DefaultParserConfig):
         self._trad_re = None
         self._def_re = None
         self._lan_re = None
+        self._beg_re = None
+        self._com_re = None
+        self._lan_spec = None
         super(EnglishParser, self).__init__(wikt_cfg, parser_cfg)
 
     @property
@@ -234,6 +282,66 @@ class EnglishParser(DefaultParserConfig):
             #self._def_re = re.compile(r'==.*==')
             self._def_re = re.compile(r'(^\#) ({lb|en|.*)+(.*)',re.M|re.I)
         return self._def_re
+
+    @property
+    def beg_re(self):
+        if not self._beg_re:
+            self._beg_re =  re.compile(r'^\# ')
+        return self._beg_re
+
+    @property
+    def com_re(self):
+        if not self._com_re:
+            self._com_re =  re.compile(r'\{\{.*\}\}')
+        return self._com_re
+
+class ItalianParser(DefaultParserConfig):
+
+    def __init__(self, wikt_cfg=None, parser_cfg=None):
+        self.defaults.update(default_parser_defaults)
+        self.wc = 'it'
+        self._trad_re = None
+        self._def_re = None
+        self._lan_re = None
+        self._beg_re = None
+        self._com_re = None
+        self._lan_spec = None
+        super(ItalianParser, self).__init__(wikt_cfg, parser_cfg)
+
+    @property
+    def trad_re(self):
+        if not self._trad_re:
+            self._trad_re = re.compile(r'\{\{' + self.translation_prefix +
+                                       r'\|([^}|]+)\|'  # wikicode
+                                       r'([^}|]*)'  # word
+                                       r'(?:\|([^}|]*))*\}\}', re.UNICODE)  # rest
+        return self._trad_re
+
+    @property
+    def lan_re(self):
+        if not self._lan_re:
+            #self._def_re = re.compile(r'==.*==')
+            self._lan_re = re.compile(r'\{\{.*\|it\}\}', re.M)
+        return self._lan_re
+    
+    @property
+    def def_re(self):
+        if not self._def_re:
+            #self._def_re = re.compile(r'==.*==')
+            self._def_re = re.compile(r'(^\#) (.*)',re.M|re.I)
+        return self._def_re
+
+    @property
+    def beg_re(self):
+        if not self._beg_re:
+            self._beg_re =  re.compile(r'^\# ')
+        return self._beg_re
+
+    @property
+    def com_re(self):
+        if not self._com_re:
+            self._com_re =  re.compile(r'\{\{.*\}\}')
+        return self._com_re
 
 class LangnamesParserConfig(ParserConfig):
 
@@ -436,19 +544,22 @@ class ChineseConfig(LangnamesWiktionaryConfig):
         super(ChineseConfig, self).__init__()
 
 
-class ItalianConfig(LangnamesWiktionaryConfig):
+class ItalianConfig(DefaultWiktionaryConfig):
 
     def __init__(self):
         self.full_name = 'Italian'
         self.wc = 'it'
-        self.langnames_cfg = {
+        """ self.langnames_cfg = {
             'langnames': False,
             'translation_line': r':\*\{{([^}]+)}}:\s*(.*)',
             'skip_translation_line':
             r'(\<\!\-\-\s*inserisci|inserisci.*traduzioni|altri\ template\ utili)',
             'skip_translation': r'(:\*:|<\!|^\?+$)',
-        }
+        } """
         super(ItalianConfig, self).__init__()
+        self._parser_configs = [
+            [DefaultArticleParser, ItalianParser, {}]
+        ]
 
 
 class VietnameseConfig(LangnamesWiktionaryConfig):
@@ -547,21 +658,8 @@ class GermanConfig(SectionLevelWiktionaryConfig):
         super(GermanConfig, self).__init__()
         self.full_name = 'German'
         self.wc = 'de'
-        self.allow_synonyms = False
-        default_cfg = {
-            'trim_re': r'(.*)\#.*(.*)',
-            'translation_prefix': r'[\xdc\xfc]',
-        }
-        self._section_parser_configs = [
-            [DefaultArticleParser, DefaultParserConfig, default_cfg]
-        ]
-        section_cfg = {
-            'parsers': [[DefaultArticleParser, DefaultParserConfig, default_cfg]],
-            'section_langmap': path.join(base_dir, '../res/langnames/german'),
-            'section_re': re.compile(r'==.*\(\{\{[Ss]prache\|(.+)\}\}\)\s*==', re.UNICODE),
-        }
         self._parser_configs = [
-            [SectionAndArticleParser, SectionLevelParserConfig, section_cfg]
+            [SectionAndArticleParser, GermanParser, {}]
         ]
 
 
