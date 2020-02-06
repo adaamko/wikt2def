@@ -1,0 +1,44 @@
+acl	-,-
+acl:relcl	-,-
+advcl	0,-
+advmod	0,-
+amod	0,-
+appos	0,0
+aux	-,-
+aux:pass	-,-
+case	-,-
+cc	-,-
+cc:preconj	-,-
+ccomp	2,-
+compound	-,-
+compound:prt	-,-
+conj	-,-
+cop	-,-
+csubj	1,0
+det	-,-
+det:predet	-,-
+discourse	-,-
+expl	-,-
+fixed	-,-
+flat	-,-
+goeswith	-,-
+iobj	-,-
+list	-,-
+mark	-,-
+nmod	0,-
+nmod:npmod	-,-	NPMOD
+nmod:poss	-,-	HAS
+nmod:tmod	-,-	AT
+nsubj	1,0
+nsubj:pass	-,-
+nummod	0,-
+obj	2,-
+obl	-,-
+obl:npmod	0,-
+obl:tmod	-,-	AT
+orphan	-,-
+parataxis	-,-
+punct	-,-
+reparandum	-,-
+vocative	-,-
+xcomp	2,-
