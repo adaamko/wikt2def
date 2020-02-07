@@ -41,49 +41,6 @@ def get_wikicodes(wikicodes):
 
     return wc_set
 
-def print_definition(word, pos, definition, category, def_f):
-    if not pos:
-        pos = "-"
-    pipe_idx = pos.find("|")
-    if -1 < pipe_idx:
-        pos = pos[:pipe_idx]
-    
-    categories = "\t".join(category)
-    if not categories:
-        categories = "-"
-    
-    if len(definition) == 0:
-        definition = ["-"]
-    
-    for d in definition:
-        print("{}\t{}\t{}\t{}".format(word, pos, d, categories), file=def_f)
-
-def extract_definitions(wc_set):
-    to_parse = filter(lambda c: c.wc in wc_set, config.configs)
-    word = ""
-    pos = ""
-    definition = []
-    category = []
-    for cfg in to_parse:
-        category_marker = "[[{}".format(cfg.category_marker)
-        with open(cfg.dump_path) as dump_f, open(cfg.def_path, "w") as def_f:
-            for line in dump_f:
-                if line.startswith("%%#PAGE"):
-                    print_definition(word, pos, definition, category, def_f)
-                    word = ""
-                    pos = ""
-                    definition = []
-                    category = []
-                    word = line[8:-1]
-                if line.startswith("#"):
-                    definition.append(line[1:-1])
-                if line.startswith(category_marker):
-                    category.append(line[len(category_marker) + 1:-3])
-                if line.startswith("{{" + cfg.wc) and pos == "":
-                    pos = line[5:-3]
-            print_definition(word, pos, definition, category, def_f)
-
-
 def main(download, definitions, wikicodes):
     wc_set = get_wikicodes(wikicodes)
     # print(wc_set)

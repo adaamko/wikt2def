@@ -14,8 +14,8 @@ class Wiktionary(object):
         with open(self.cfg.output_path, 'w') as self.outf:
             i = 0
             for title, text in self.read_dump():
-                if i > 1000:
-                    break
+                # if i > 1000:
+                #     break
                 i += 1
                 triplets = self.extract_definitions(title, text)
                 if triplets:

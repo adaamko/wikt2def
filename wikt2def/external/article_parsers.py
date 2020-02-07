@@ -128,54 +128,6 @@ class LangnamesArticleParser(ArticleParser):
 
 class DefaultArticleParser(ArticleParser):
 
-    def extract_translations(self, title, text):
-        translations = list()
-        definitions = []
-        group = None
-        comments = re.compile(r'\{\{.*\}\}')
-        beginning = re.compile(r'^\# ')
-        for line in text.split("\n"):
-            lan_re = self.cfg.lan_re.match(line)
-            if lan_re:
-                group = lan_re.group()
-            def_re = self.cfg.def_re.match(line)
-            if def_re:
-                definition = def_re.group()
-                beg_match = beginning.match(definition)
-                com_match = comments.findall(definition)
-                if com_match:
-                    last_match = com_match[-1]
-                    split_def = definition.split(last_match)
-                    if len(split_def) > 1 and split_def[1].strip():
-                        definitions.append((title, group, self.trim_translation(split_def[1])))
-                else:
-                    split_def = definition.split(beg_match.group())
-                    definitions.append((title, group, self.trim_translation(split_def[1])))
-
-        """
-        for tr in self.cfg.lan_re.finditer(text):
-            print(tr)
-        for tr in self.cfg.def_re.finditer(text):
-            defin = tr.group()
-            if not defin or not defin.strip():
-                continue
-            print(defin)
-        """
-
-        for tr in self.cfg.trad_re.finditer(text):
-            wc = tr.group(self.cfg.wc_field)
-            if not wc or not wc.strip() or not wc in self.wikt_cfg.wikicodes:
-                continue
-            word = tr.group(self.cfg.word_field)
-            if not word or not word.strip():
-                continue
-            word = word.strip()
-            if self.skip_word(word):
-                continue
-            translations.append((wc, word))
-        print(definitions)
-        return set(translations)
-
     def extract_definitions(self, title, text):
         definitions = []
         group = None

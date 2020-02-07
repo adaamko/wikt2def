@@ -7,6 +7,7 @@ import argparse
 
 from .dep_to_4lang import DepTo4lang
 from .stanford_wrapper import StanfordParser
+from .lexicon import Lexicon
 from networkx.readwrite import json_graph
 
 __LOGLEVEL__ = 'INFO'
@@ -15,9 +16,10 @@ __MACHINE_LOGLEVEL__ = 'INFO'
 class TextTo4lang():
     square_regex = re.compile("\[.*?\]")
     
-    def __init__(self):
+    def __init__(self, lang):
         self.parser_wrapper = StanfordParser()
         self.dep_to_4lang = DepTo4lang()
+        self.lexicon = Lexicon(lang)
 
     def preprocess_text(self, text):
         t = text.strip()
@@ -28,7 +30,7 @@ class TextTo4lang():
         t = t.strip()
         return t
 
-    def process_text(self, text):
+    def process_text(self, text, expand=False):
         logging.info("parsing text...")
         preproc_sens = []
         preproc_line = self.preprocess_text(text.strip())
@@ -38,6 +40,9 @@ class TextTo4lang():
         corefs = parse[1]
         graph = self.dep_to_4lang.get_machines_from_deps_and_corefs(
                 deps, corefs)
+
+        if expand:
+            self.lexicon.expand(graph)
 
         return graph
 
@@ -84,6 +89,7 @@ class TextTo4lang():
             logging.info("processing sentences...")
             graph = self.dep_to_4lang.get_machines_from_deps_and_corefs(
                 deps, corefs)
+            self.dep_to_4lang.lexicon.expand(graph)
             
             sen_graphs.append(graph)
 
