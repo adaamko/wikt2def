@@ -42,3 +42,4 @@ punct	-,-
 reparandum	-,-
 vocative	-,-
 xcomp	2,-
+root	-,-

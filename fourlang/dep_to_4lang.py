@@ -147,6 +147,8 @@ class Dependency():
             'trying {0} on {1} and {2}...'.format(self.name, msd1, msd2))
         if self.match(msd1, msd2):
             logging.debug('MATCH!')
+            if concept1.printname == "ROOT":
+                graph.add_root(concept2)
             for operator in self.operators:
                 operator.act((concept1, concept2), graph)
 

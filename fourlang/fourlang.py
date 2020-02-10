@@ -16,12 +16,28 @@ class FourLang():
 
     def __init__(self):
         self.G=nx.MultiDiGraph()
+        self.root = None
+
+    def add_node(self, concept):
+        if concept.printname != "ROOT":
+            self.G.add_node(concept.unique_name())
+
+    def add_root(self, concept):
+        self.root = concept.unique_name()
+        self.G.add_node(concept.unique_name())
 
     def connect_edges(self, concept1, concept2, label):
         self.G.add_edge(concept1.unique_name(), concept2.unique_name(), color=label)
 
     def get_graph(self):
         return self.G
+
+    def merge_definition_graph(self, graph):
+        graph_root = graph.root
+        graph.G = nx.relabel_nodes(graph.G, {graph_root: self.root})
+        self.G.add_edge(self.root, graph_root, color=0)
+        F = nx.compose(self.G, graph.G)
+        self.G = F
 
     def d_clean(self, string):
         s = string

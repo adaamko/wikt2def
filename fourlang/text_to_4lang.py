@@ -42,7 +42,7 @@ class TextTo4lang():
                 deps, corefs)
 
         if expand:
-            self.lexicon.expand(graph)
+            self.lexicon.expand(graph, self.dep_to_4lang, self.parser_wrapper)
 
         return graph
 
