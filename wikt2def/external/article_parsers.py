@@ -147,6 +147,11 @@ class DefaultArticleParser(ArticleParser):
                     split_def = definition.split(last_match)
                     if len(split_def) > 1 and split_def[1].strip():
                         definitions.append((title, group, self.trim_translation(split_def[1])))
+                    else:
+                        if len(com_match) > 1:
+                            split_def = definition.split(com_match[-2])
+                            if len(split_def) > 1:
+                                definitions.append((title, group, self.trim_translation(split_def[1])))
                 else:
                     split_def = definition.split(beg_match.group())
                     definitions.append((title, group, self.trim_translation(split_def[1])))
