@@ -237,7 +237,7 @@ class GermanParser(DefaultParserConfig):
     @property
     def com_re(self):
         if not self._com_re:
-            self._com_re =  re.compile(r'\{\{.*\}\}')
+            self._com_re =  re.compile(r'\{\{[^}]*\}\}')
         return self._com_re
 
     @property
@@ -292,7 +292,7 @@ class EnglishParser(DefaultParserConfig):
     @property
     def com_re(self):
         if not self._com_re:
-            self._com_re =  re.compile(r'\{\{.*\}\}')
+            self._com_re =  re.compile(r'\{\{[^}]*\}\}')
         return self._com_re
 
 class ItalianParser(DefaultParserConfig):
@@ -340,7 +340,7 @@ class ItalianParser(DefaultParserConfig):
     @property
     def com_re(self):
         if not self._com_re:
-            self._com_re =  re.compile(r'\{\{.*\}\}')
+            self._com_re =  re.compile(r'\{\{[^}]*\}\}')
         return self._com_re
 
 class LangnamesParserConfig(ParserConfig):
