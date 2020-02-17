@@ -16,10 +16,16 @@ __MACHINE_LOGLEVEL__ = 'INFO'
 class TextTo4lang():
     square_regex = re.compile("\[.*?\]")
     
-    def __init__(self, lang):
-        self.parser_wrapper = StanfordParser()
+    def __init__(self, lang, port=5005):
+        self.parser_wrapper = StanfordParser(port=port)
         self.dep_to_4lang = DepTo4lang()
         self.lexicon = Lexicon(lang)
+
+    def get_definition(self, word):
+        if word in self.lexicon.lexicon:
+            return self.lexicon.lexicon[word]
+        else:
+            return None
 
     def preprocess_text(self, text):
         t = text.strip()
