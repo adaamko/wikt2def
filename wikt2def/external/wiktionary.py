@@ -45,7 +45,7 @@ class Wiktionary(object):
         for parser in self.parsers:
             for t in parser.extract_definitions(title, text):
                 triplets.append(t)
-        return set(triplets)
+        return triplets
 
     def skip_article(self, title, text):
         if not title.strip() or not text.strip():
@@ -66,7 +66,7 @@ class Wiktionary(object):
             self.triplets.append(triplet)
 
     def write_all_pairs(self):
-        for pair in sorted(self.triplets):
+        for pair in self.triplets:
             self.outf.write('\t'.join(pair) + '\n')
 
     def read_dump(self):
