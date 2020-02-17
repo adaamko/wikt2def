@@ -7,8 +7,8 @@ import json
 
 class StanfordParser():
     
-    def __init__(self):
-        self.server = "http://127.0.0.1:5005/parse"
+    def __init__(self, port=5005):
+        self.server = "http://127.0.0.1:" + str(port) + "/parse"
         
     def parse_text(self, text):
         data = {'text':   text}
