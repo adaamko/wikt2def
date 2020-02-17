@@ -8,15 +8,26 @@ import json
 class StanfordParser():
     
     def __init__(self, port=5005):
-        self.server = "http://127.0.0.1:" + str(port) + "/parse"
+        self.server = "http://127.0.0.1:" + str(port)
         
     def parse_text(self, text):
-        data = {'text':   text}
+        data = {'text': text}
         data_json = json.dumps(data)
-        payload = {'json_payload': data_json}
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
-        r = requests.post(self.server, data=data_json, headers=headers)
+        r = requests.post(self.server + "/parse", data=data_json, headers=headers)
 
         deps = r.json()["deps"]
         corefs = []
         return deps, corefs
+
+    def lemmatize_text(self, text):
+        data = {'text': text}
+        data_json = json.dumps(data)
+        headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+        r = requests.post(self.server + "/lemmatize", data=data_json, headers=headers)
+
+        lemmas = r.json()["lemmas"]
+        return lemmas
+
+sp = StanfordParser()
+print(sp.lemmatize_text("cibo: alimento che viene ingerito dall'uomo o dall'animale"))

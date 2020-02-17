@@ -4,21 +4,24 @@ import requests
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 import spacy
-
-
-def call_elmo_service(premise, hypothesis, language, port=1666):
-    data = json.dumps({"sentences": [hypothesis, premise]})
-    headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
-    r = requests.post("http://127.0.0.1:{}/{}".format(port, language), data=data, headers=headers)
-    return [np.asarray(e) for e in r.json()["embeddings"]]
+from fourlang.stanford_wrapper import StanfordParser
 
 
 class Similarity(object):
-    def __init__(self):
-        self.nlp = spacy.load("en_core_web_sm")
+    def __init__(self, lang="en"):
+        self.lang = lang
+        language_models = {"en": "en_core_web_sm", "it": "it_core_news_sm", "de": "de_core_news_sm"}
+        self.nlp = spacy.load(language_models[self.lang])
+        self.stanford_parser = StanfordParser()
 
     def clear_node(self, node):
         return re.sub(r'_[0-9]*', '', node)
+
+    def call_elmo_service(self, premise, hypothesis, port=1666):
+        data = json.dumps({"sentences": [premise, hypothesis]})
+        headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+        r = requests.post("http://127.0.0.1:{}/{}".format(port, self.lang), data=data, headers=headers)
+        return [np.asarray(e) for e in r.json()["embeddings"]]
 
     def asim_jac_words(self, def_premise, def_hypothesis):
         prem = self.nlp(def_premise)
@@ -61,25 +64,27 @@ class Similarity(object):
         else:
             return float(len(sim)) / len(hyp)
 
-    def asim_jac_nodes_elmo(self, premise, hypothesis, graph_premise, graph_hypothesis, def_premise, def_hypothesis,
-                            lang):
-        embeddings = call_elmo_service(": ".join([premise, def_premise]), ": ".join([hypothesis, def_hypothesis]), lang)
+    def asim_jac_nodes_elmo(self, premise, hypothesis, graph_premise, graph_hypothesis, def_premise, def_hypothesis):
 
-        premise_words = {w: s for (w, s) in zip([premise] + def_premise.split(' '), embeddings[0])}
-        hypothesis_words = {w: s for (w, s) in zip([hypothesis] + def_hypothesis.split(' '), embeddings[0])}
+        premise_full_def = ": ".join([premise, def_premise])
+        hypothesis_full_def = ": ".join([hypothesis, def_hypothesis])
+        embeddings = self.call_elmo_service(premise_full_def, hypothesis_full_def)
 
-        pre = set([premise_words[self.clear_node(node)] for node in graph_premise.G.nodes])
-        hyp = set([hypothesis_words[self.clear_node(node)] for node in graph_hypothesis.G.nodes])
+        premise_tokens = self.stanford_parser.lemmatize_text(premise_full_def)
+        hypothesis_tokens = self.stanford_parser.lemmatize_text(hypothesis_full_def)
+
+        premise_words = {w: s for (w, s) in zip(premise_tokens, embeddings[0])}
+        hypothesis_words = {w: s for (w, s) in zip(hypothesis_tokens, embeddings[1])}
+
+        pre = np.asarray([premise_words[self.clear_node(node)] for node in graph_premise.G.nodes])
+        hyp = np.asarray([hypothesis_words[self.clear_node(node)] for node in graph_hypothesis.G.nodes])
+
         similarities = cosine_similarity(pre, hyp)
         best_sim = [max(word_sim) for word_sim in np.transpose(similarities)]
         return sum(best_sim) / len(best_sim)
 
-    def asim_jac_bow_elmo(self, def_premise, def_hypothesis, lang):
-        embeddings = call_elmo_service(def_premise, def_hypothesis, lang)
+    def asim_jac_bow_elmo(self, def_premise, def_hypothesis):
+        embeddings = self.call_elmo_service(def_premise, def_hypothesis)
         similarities = cosine_similarity(embeddings[0], embeddings[1])
         best_sim = [max(word_sim) for word_sim in np.transpose(similarities)]
         return sum(best_sim) / len(best_sim)
-
-
-#print(asim_jac_bow_elmo("Ich mag Hünde", "Ich mag meinen Hund", "de"))
-

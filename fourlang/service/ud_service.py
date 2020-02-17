@@ -14,6 +14,7 @@ args = parser.parse_args()
 
 app = Flask(__name__)
 
+
 @app.route('/parse', methods=['POST'])
 def parse():
     r = request.json
@@ -37,6 +38,20 @@ def parse():
             dep_list.append(curr_dep)
         sen_deps.append(dep_list)
     ret_value = {"deps": sen_deps}
+
+    return jsonify(ret_value)
+
+
+@app.route('/lemmatize', methods=['POST'])
+def lemmatize():
+    r = request.json
+    sentence = r['text']
+    doc = wrapper.nlp(sentence)
+    lemmas = []
+    for sens in doc.sentences:
+        lemmas += [l.lemma if l.lemma is not None else l.text for l in sens.words if l.upos != "PUNCT"]
+
+    ret_value = {"lemmas": lemmas}
 
     return jsonify(ret_value)
 
