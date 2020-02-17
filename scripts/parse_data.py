@@ -3,7 +3,7 @@ import os
 
 
 def read(lang1, lang2=None, graded=True):
-    filename = "../SemEval2020-Task2-Dev"
+    filename = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../SemEval2020-Task2-Dev")
     language_name = ""
     if lang2 is None:
         filename = os.path.join(filename, "monolingual")
