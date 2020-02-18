@@ -27,12 +27,13 @@ class Lexicon():
         for node in graph.get_nodes():
             if node not in self.stopwords and node in self.lexicon:
                 definition = self.lexicon[node]
-                parse = parser_wrapper.parse_text(definition)
-                deps = parse[0]
-                corefs = parse[1]
-                def_graph = dep_to_4lang.get_machines_from_deps_and_corefs(
+                if definition:
+                    parse = parser_wrapper.parse_text(definition)
+                    deps = parse[0]
+                    corefs = parse[1]
+                    def_graph = dep_to_4lang.get_machines_from_deps_and_corefs(
                         deps, corefs)
-                graph.merge_definition_graph(def_graph)
+                    graph.merge_definition_graph(def_graph)
 
 
 
