@@ -49,7 +49,12 @@ def lemmatize():
     doc = wrapper.nlp(sentence)
     lemmas = []
     for sens in doc.sentences:
-        lemmas += [l.lemma if l.lemma is not None else l.text for l in sens.words if l.upos != "PUNCT"]
+        for token in sens.tokens:
+            index = token.index.split('-')[0]
+            for word in token.words:
+                if word.index == index and word.upos != "PUNCT":
+                    lemmas += [word.lemma if word.lemma is not None else word.text]
+                    break
 
     ret_value = {"lemmas": lemmas}
 
@@ -59,6 +64,7 @@ def lemmatize():
 def main(language, port_to_run):
     wrapper.set_parser(language)
     app.run(port=port_to_run)
+
 
 if __name__ == '__main__':
     main(args.lang[0], args.port[0])

@@ -28,6 +28,3 @@ class StanfordParser():
 
         lemmas = r.json()["lemmas"]
         return lemmas
-
-sp = StanfordParser()
-print(sp.lemmatize_text("cibo: alimento che viene ingerito dall'uomo o dall'animale"))

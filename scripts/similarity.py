@@ -23,6 +23,18 @@ class Similarity(object):
         r = requests.post("http://127.0.0.1:{}/{}".format(port, self.lang), data=data, headers=headers)
         return [np.asarray(e) for e in r.json()["embeddings"]]
 
+    def get_elmo_nodes(self, premise, def_premise, hypothesis, def_hypothesis):
+        premise_full_def = ": ".join([premise, def_premise])
+        hypothesis_full_def = ": ".join([hypothesis, def_hypothesis])
+        embeddings = self.call_elmo_service(premise_full_def, hypothesis_full_def)
+
+        premise_tokens = self.stanford_parser.lemmatize_text(premise_full_def)
+        hypothesis_tokens = self.stanford_parser.lemmatize_text(hypothesis_full_def)
+
+        premise_words = {w: s for (w, s) in zip(premise_tokens, embeddings[0])}
+        hypothesis_words = {w: s for (w, s) in zip(hypothesis_tokens, embeddings[1])}
+        return premise_words, hypothesis_words
+
     def asim_jac_words(self, def_premise, def_hypothesis):
         prem = self.nlp(def_premise)
         hyp = self.nlp(def_hypothesis)
@@ -47,41 +59,51 @@ class Similarity(object):
             return float(len(sim)) / len(filtered_hyp)
 
     def asim_jac_edges(self, graph_premise, graph_hypothesis):
+        prem = set([(self.clear_node(s), self.clear_node(r), e['color']) for (s, r, e) in graph_premise.G.edges(data=True)])
         hyp = set([(self.clear_node(s), self.clear_node(r), e['color']) for (s, r, e) in graph_hypothesis.G.edges(data=True)])
-        pre = set([(self.clear_node(s), self.clear_node(r), e['color']) for (s, r, e) in graph_premise.G.edges(data=True)])
-        sim = hyp & pre
+        sim = hyp & prem
         if not sim or len(hyp) == 0:
             return 0
         else:
             return float(len(sim)) / len(hyp)
 
     def asim_jac_nodes(self, graph_hypothesis, graph_premise):
+        prem = set([self.clear_node(node) for node in graph_premise.G.nodes])
         hyp = set([self.clear_node(node) for node in graph_hypothesis.G.nodes])
-        pre = set([self.clear_node(node) for node in graph_premise.G.nodes])
-        sim = hyp & pre
+        sim = hyp & prem
         if not sim or len(hyp) == 0:
             return 0
         else:
             return float(len(sim)) / len(hyp)
 
     def asim_jac_nodes_elmo(self, premise, hypothesis, graph_premise, graph_hypothesis, def_premise, def_hypothesis):
+        premise_words, hypothesis_words = self.get_elmo_nodes(premise, def_premise, hypothesis, def_hypothesis)
 
-        premise_full_def = ": ".join([premise, def_premise])
-        hypothesis_full_def = ": ".join([hypothesis, def_hypothesis])
-        embeddings = self.call_elmo_service(premise_full_def, hypothesis_full_def)
-
-        premise_tokens = self.stanford_parser.lemmatize_text(premise_full_def)
-        hypothesis_tokens = self.stanford_parser.lemmatize_text(hypothesis_full_def)
-
-        premise_words = {w: s for (w, s) in zip(premise_tokens, embeddings[0])}
-        hypothesis_words = {w: s for (w, s) in zip(hypothesis_tokens, embeddings[1])}
-
-        pre = np.asarray([premise_words[self.clear_node(node)] for node in graph_premise.G.nodes])
+        prem = np.asarray([premise_words[self.clear_node(node)] for node in graph_premise.G.nodes])
         hyp = np.asarray([hypothesis_words[self.clear_node(node)] for node in graph_hypothesis.G.nodes])
 
-        similarities = cosine_similarity(pre, hyp)
+        similarities = cosine_similarity(prem, hyp)
         best_sim = [max(word_sim) for word_sim in np.transpose(similarities)]
         return sum(best_sim) / len(best_sim)
+
+    def asim_jac_edges_elmo(self, premise, hypothesis, graph_premise, graph_hypothesis, def_premise, def_hypothesis):
+        premise_words, hypothesis_words = self.get_elmo_nodes(premise, def_premise, hypothesis, def_hypothesis)
+
+        prem = [(premise_words[self.clear_node(s)], premise_words[self.clear_node(r)], e['color']) for
+                          (s, r, e) in graph_premise.G.edges(data=True)]
+        hyp = [(hypothesis_words[self.clear_node(s)], hypothesis_words[self.clear_node(r)], e['color']) for
+                          (s, r, e) in graph_hypothesis.G.edges(data=True)]
+        if len(hyp) == 0 or len(prem) == 0:
+            return 0
+        sim = 0
+        for hyp_edge in hyp:
+            scores = []
+            for prem_edge in prem:
+                if hyp_edge[2] == prem_edge[2]:
+                    scores.append((cosine_similarity([np.asarray(hyp_edge[0])], [np.asarray(prem_edge[0])])[0] +
+                                   cosine_similarity([np.asarray(hyp_edge[1])], [np.asarray(prem_edge[1])])[0]) / 2)
+            sim += max(scores)
+        return sum(sim) / len(hyp)
 
     def asim_jac_bow_elmo(self, def_premise, def_hypothesis):
         embeddings = self.call_elmo_service(def_premise, def_hypothesis)
