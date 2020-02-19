@@ -41,12 +41,12 @@ class Similarity(object):
 
         filtered_prem = []
         for token in prem:
-            if not token.is_stop:
+            if not token.is_stop and not token.is_punct:
                 filtered_prem.append(token.lemma_)
 
         filtered_hyp = []
         for token in hyp:
-            if not token.is_stop:
+            if not token.is_stop and not token.is_punct:
                 filtered_hyp.append(token.lemma_)
 
         filtered_prem = set(filtered_prem)
