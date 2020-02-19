@@ -26,5 +26,7 @@ class StanfordParser():
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         r = requests.post(self.server + "/lemmatize", data=data_json, headers=headers)
 
-        lemmas = r.json()["lemmas"]
-        return lemmas
+        r_json = r.json()
+        lemmas = r_json["lemmas"]
+        words = r_json["words"]
+        return lemmas, words

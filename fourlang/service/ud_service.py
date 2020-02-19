@@ -48,15 +48,17 @@ def lemmatize():
     sentence = r['text']
     doc = wrapper.nlp(sentence)
     lemmas = []
+    words = []
     for sens in doc.sentences:
         for token in sens.tokens:
-            index = token.index.split('-')[0]
+            words.append(token.text)
+            current_lemma = []
             for word in token.words:
-                if word.index == index and word.upos != "PUNCT":
-                    lemmas += [word.lemma if word.lemma is not None else word.text]
-                    break
+                if word.index in token.index.split('-') and word.upos != "PUNCT":
+                    current_lemma += [word.lemma if word.lemma is not None else word.text]
+            lemmas.append(current_lemma)
 
-    ret_value = {"lemmas": lemmas}
+    ret_value = {"lemmas": lemmas, "words": words}
 
     return jsonify(ret_value)
 

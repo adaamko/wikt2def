@@ -8,7 +8,6 @@ import sys
 import os
 import requests
 import time
-import numpy as np
 
 
 def binary(lang):
@@ -61,22 +60,27 @@ def binary(lang):
             def_premise = lexicon.lexicon[premise]
         if hypothesis in lexicon.lexicon:
             def_hypothesis = lexicon.lexicon[hypothesis]
-        results["asim_jac_word"].write(" ".join(
-            [premise, hypothesis, str(int(np.round(similarity.asim_jac_words(def_premise, def_hypothesis))))])+"\n")
-        results["asim_jac_node"].write(" ".join(
-            [premise, hypothesis, str(int(np.round(similarity.asim_jac_nodes(graph_premise, graph_hypothesis))))])+"\n")
-        results["asim_jac_edge"].write(" ".join(
-            [premise, hypothesis, str(int(np.round(similarity.asim_jac_edges(graph_premise, graph_hypothesis))))])+"\n")
-        results["asim_jac_bow_elmo"].write(" ".join(
-            [premise, hypothesis, str(int(np.round(similarity.asim_jac_bow_elmo(def_premise, def_hypothesis))))])+"\n")
-        results["asim_jac_node_elmo"].write(" ".join(
-            [premise, hypothesis, str(int(np.round(similarity.asim_jac_nodes_elmo(premise, hypothesis,
-                                                                                  graph_premise, graph_hypothesis,
-                                                                                  def_premise, def_hypothesis))))])+"\n")
-        results["asim_jac_edge_elmo"].write(" ".join(
-            [premise, hypothesis, str(int(np.round(similarity.asim_jac_edges_elmo(premise, hypothesis,
-                                                                                  graph_premise, graph_hypothesis,
-                                                                                  def_premise, def_hypothesis))))])+"\n")
+        try:
+            results["asim_jac_word"].write(" ".join(
+                [premise, hypothesis, str(similarity.asim_jac_words(def_premise, def_hypothesis))])+"\n")
+            results["asim_jac_node"].write(" ".join(
+                [premise, hypothesis, str(similarity.asim_jac_nodes(graph_premise, graph_hypothesis))])+"\n")
+            results["asim_jac_edge"].write(" ".join(
+                [premise, hypothesis, str(similarity.asim_jac_edges(graph_premise, graph_hypothesis))])+"\n")
+            results["asim_jac_bow_elmo"].write(" ".join(
+                [premise, hypothesis, str(similarity.asim_jac_bow_elmo(def_premise, def_hypothesis))])+"\n")
+            results["asim_jac_node_elmo"].write(" ".join(
+                [premise, hypothesis, str(similarity.asim_jac_nodes_elmo(premise, hypothesis,
+                                                                         graph_premise, graph_hypothesis,
+                                                                         def_premise, def_hypothesis))])+"\n")
+            results["asim_jac_edge_elmo"].write(" ".join(
+                [premise, hypothesis, str(similarity.asim_jac_edges_elmo(premise, hypothesis,
+                                                                         graph_premise, graph_hypothesis,
+                                                                         def_premise, def_hypothesis))])+"\n")
+        except Exception as e:
+            pid_elmo.terminate()
+            pid_ud.terminate()
+            raise e
     pid_elmo.terminate()
     pid_ud.terminate()
 
