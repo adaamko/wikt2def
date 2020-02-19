@@ -5,13 +5,15 @@ import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 import spacy
 from fourlang.stanford_wrapper import StanfordParser
-
+from .parse_data import load_vec
+from .utils import get_distance
 
 class Similarity(object):
     def __init__(self, lang="en"):
         self.lang = lang
-        language_models = {"en": "en_core_web_sm", "it": "it_core_news_sm", "de": "de_core_news_sm"}
-        self.nlp = spacy.load(language_models[self.lang])
+        self.language_models = {"en": "en_core_web_sm", "it": "it_core_news_sm", "de": "de_core_news_sm"}
+        self.cross_lingual_path = "/home/adaamko/data/DMR/"
+        self.nlp = spacy.load(self.language_models[self.lang])
         self.stanford_parser = StanfordParser()
         self.fourlang_expressions = ["has", "at", "npmod"]
         fourlang_embeddings = self.call_elmo_service(self.fourlang_expressions)
@@ -20,6 +22,19 @@ class Similarity(object):
 
     def clear_node(self, node):
         return re.sub(r'_[0-9]*', '', node)
+
+    def init_cross_lingual_embeddings(self, src_lang, tgt_lang):
+        src_path = '/home/adaamko/data/DMR/wiki.multi.' + src_lang + '.vec'
+        tgt_path = '/home/adaamko/data/DMR/wiki.multi.' + tgt_lang + '.vec'
+        nmax = 250000  # maximum number of word embeddings to load
+
+        self.src_embeddings, self.src_id2word, self.src_word2id = load_vec(src_path, nmax)
+        self.tgt_embeddings, self.tgt_id2word, self.tgt_word2id = load_vec(tgt_path, nmax)
+
+        self.src_word2id = {v: k for k, v in self.src_id2word.items()}
+        self.tgt_word2id = {v: k for k, v in self.tgt_id2word.items()}
+        self.nlp_src_lang = spacy.load(self.language_models[src_lang])
+        self.nlp_tgt_lang = spacy.load(self.language_models[tgt_lang])
 
     def call_elmo_service(self, sentences, port=1666):
         data = json.dumps({"sentences": sentences})
@@ -55,6 +70,34 @@ class Similarity(object):
         premise_words = self.get_embedding_dictionary([[premise], []] + premise_token_lemmas, embeddings[0])
         hypothesis_words = self.get_embedding_dictionary([[hypothesis], []] + hypothesis_token_lemmas, embeddings[1])
         return premise_words, hypothesis_words
+
+    def compute_min_distance_scores(self, def_premise, def_hypothesis):
+        prem =  self.nlp_src_lang(def_premise)
+        hyp = self.nlp_tgt_lang(def_hypothesis)   
+
+        filtered_prem = []
+        for token in prem:
+            if not token.is_stop and not token.is_punct:
+                filtered_prem.append(token.lemma_)
+
+        filtered_hyp = []
+        for token in hyp:
+            if not token.is_stop and not token.is_punct:
+                filtered_hyp.append(token.lemma_)
+
+        filtered_prem = set(filtered_prem)
+        filtered_hyp = set(filtered_hyp)
+        
+        max_score = 0
+        for prem_word in filtered_prem:
+            for hyp_word in filtered_hyp:
+                try:
+                    distance = get_distance(prem_word, hyp_word, self.src_embeddings, self.tgt_embeddings)
+                except KeyError:
+                    distance = 0
+                if distance > max_score:
+                    max_score = distance
+        return max_score
 
     def asim_jac_words(self, def_premise, def_hypothesis):
         prem = self.nlp(def_premise)
