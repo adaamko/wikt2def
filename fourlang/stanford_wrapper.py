@@ -30,3 +30,10 @@ class StanfordParser():
         lemmas = r_json["lemmas"]
         words = r_json["words"]
         return lemmas, words
+
+    def lemmatize_word(self, word):
+        data = {'word': word}
+        data_json = json.dumps(data)
+        headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+        r = requests.post(self.server + "/lemmatize_word", data=data_json, headers=headers)
+        return r.json()["lemma"]

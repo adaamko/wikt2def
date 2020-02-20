@@ -63,6 +63,21 @@ def lemmatize():
     return jsonify(ret_value)
 
 
+@app.route("/lemmatize_word", methods=['POST'])
+def lemmatize_word():
+    r = request.json
+    sentence = r['word']
+    doc = wrapper.nlp(sentence)
+    lemma = ""
+    for sens in doc.sentences:
+        for word in sens.words:
+            lemma = " ".join([lemma, word.lemma])
+
+    ret_value = {"lemma": lemma.strip()}
+
+    return jsonify(ret_value)
+
+
 def main(language, port_to_run):
     wrapper.set_parser(language)
     app.run(port=port_to_run)
