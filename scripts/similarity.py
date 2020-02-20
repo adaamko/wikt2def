@@ -92,7 +92,7 @@ class Similarity(object):
         for prem_word in filtered_prem:
             for hyp_word in filtered_hyp:
                 try:
-                    distance = get_distance(prem_word, hyp_word, self.src_embeddings, self.tgt_embeddings)
+                    distance = get_distance(prem_word, hyp_word, self.src_embeddings, self.tgt_embeddings, self.src_word2id, self.tgt_word2id)
                 except KeyError:
                     distance = 0
                 if distance > max_score:
