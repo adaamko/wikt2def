@@ -8,6 +8,7 @@ from fourlang.stanford_wrapper import StanfordParser
 from .parse_data import load_vec
 from .utils import get_distance
 
+
 class Similarity(object):
     def __init__(self, lang="en"):
         self.lang = lang
@@ -21,9 +22,20 @@ class Similarity(object):
                                                zip(self.fourlang_expressions, fourlang_embeddings)}
 
     def clear_node(self, node):
+        """
+        Clears the node from the 4lang id parts
+        :param node: the text to clear
+        :return: the cleared text
+        """
         return re.sub(r'_[0-9]*', '', node)
 
     def init_cross_lingual_embeddings(self, src_lang, tgt_lang):
+        """
+        Initialize cross-lingual embeddings
+        :param src_lang: the language of the premise
+        :param tgt_lang: the language of the hypothesis
+        :return: None
+        """
         src_path = '/home/adaamko/data/DMR/wiki.multi.' + src_lang + '.vec'
         tgt_path = '/home/adaamko/data/DMR/wiki.multi.' + tgt_lang + '.vec'
         nmax = 250000  # maximum number of word embeddings to load
@@ -37,15 +49,34 @@ class Similarity(object):
         self.nlp_tgt_lang = spacy.load(self.language_models[tgt_lang])
 
     def call_elmo_service(self, sentences, port=1666):
+        """
+        Calls the already running elmo service
+        :param sentences: the sentences we want to get the embeddings for
+        :param port: the port of the service
+        :return: list of embeddings
+        """
         data = json.dumps({"sentences": sentences})
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         r = requests.post("http://127.0.0.1:{}/{}".format(port, self.lang), data=data, headers=headers)
         return [np.asarray(e) for e in r.json()["embeddings"]]
 
     def get_elmo_embeddings(self, premise, hypothesis, port=1666):
+        """
+        Calls the call_elmo_service with the parameters
+        :param premise: the premise sentence
+        :param hypothesis: the hypothesis sentence
+        :param port: the port of the service
+        :return: list of embeddings
+        """
         return self.call_elmo_service([premise, hypothesis], port=port)
 
     def get_embedding_dictionary(self, token_lemmas, embeddings):
+        """
+        Gets the dictionary of the lemmas and the corresponding embeddings baseg on existing lemmas and embeddings
+        :param token_lemmas: the lemmas in the sentence
+        :param embeddings: the embedding of the sentence
+        :return: the dictionary of the lemma-to-token relations
+        """
         word_dict = self.fourlang_expression_embeddings.copy()
         for (words, embedding) in zip(token_lemmas, embeddings):
             for w in words:
@@ -53,6 +84,14 @@ class Similarity(object):
         return word_dict
 
     def get_elmo_nodes(self, premise, def_premise, hypothesis, def_hypothesis):
+        """
+        Gets the dictionary of the lemmas and the corresponding embeggings for the premise and hypothesis
+        :param premise: the premise word
+        :param def_premise: the definition of the premise
+        :param hypothesis: the hypothesis word
+        :param def_hypothesis: the definition of the hypothesis
+        :return: the embedding dictionary of the premise and hypothesis
+        """
         if len(def_premise) == 0:
             premise_token_lemmas, premise_token_words = [], []
         else:
@@ -72,7 +111,13 @@ class Similarity(object):
         return premise_words, hypothesis_words
 
     def compute_min_distance_scores(self, def_premise, def_hypothesis):
-        prem =  self.nlp_src_lang(def_premise)
+        """
+        Compute the cross-lingual minimum distance between words of the definition sentences
+        :param def_premise: the definition of the premise
+        :param def_hypothesis: the definition of the hypothesis
+        :return: the best achievable score
+        """
+        prem = self.nlp_src_lang(def_premise)
         hyp = self.nlp_tgt_lang(def_hypothesis)   
 
         filtered_prem = []
@@ -100,6 +145,12 @@ class Similarity(object):
         return max_score
 
     def asim_jac_words(self, def_premise, def_hypothesis):
+        """
+        Asymmetric Jaccard similarity between the words of the definitions
+        :param def_premise: the definition of the premise
+        :param def_hypothesis: the definition of the hypothesis
+        :return: the ratio of overlap per the length of the hypothesis definition
+        """
         prem = self.nlp(def_premise)
         hyp = self.nlp(def_hypothesis)
 
@@ -123,6 +174,12 @@ class Similarity(object):
             return float(len(sim)) / len(filtered_hyp)
 
     def asim_jac_edges(self, graph_premise, graph_hypothesis):
+        """
+        Asymmetric Jaccard similarity between the edges of the definition graphs
+        :param graph_premise: the definition graph of the premise
+        :param graph_hypothesis: the definition graph of the hypothesis
+        :return: the ratio of overlapping edges per the length of the hypothesis definition
+        """
         prem = set([(self.clear_node(s), self.clear_node(r), e['color']) for (s, r, e) in graph_premise.G.edges(data=True)])
         hyp = set([(self.clear_node(s), self.clear_node(r), e['color']) for (s, r, e) in graph_hypothesis.G.edges(data=True)])
         sim = hyp & prem
@@ -132,6 +189,12 @@ class Similarity(object):
             return float(len(sim)) / len(hyp)
 
     def asim_jac_nodes(self, graph_hypothesis, graph_premise):
+        """
+        Asymmetric Jaccard similarity between the nodes of the definition graphs
+        :param graph_premise: the definition graph of the premise
+        :param graph_hypothesis: the definition graph of the hypothesis
+        :return: the ratio of overlapping nodes per the length of the hypothesis definition
+        """
         prem = set([self.clear_node(node) for node in graph_premise.G.nodes])
         hyp = set([self.clear_node(node) for node in graph_hypothesis.G.nodes])
         sim = hyp & prem
@@ -141,6 +204,16 @@ class Similarity(object):
             return float(len(sim)) / len(hyp)
 
     def asim_jac_nodes_elmo(self, premise, hypothesis, graph_premise, graph_hypothesis, def_premise, def_hypothesis):
+        """
+        Asymmetric Jaccard similarity between the node embeddings of the definition graphs
+        :param premise: the premise word
+        :param hypothesis: the hypothesis word
+        :param graph_premise: the definition graph of the premise
+        :param graph_hypothesis: the definition graph of the hypothesis
+        :param def_premise: the definition of the premise
+        :param def_hypothesis: the definition of the hypothesis
+        :return: the ratio of best node matches per the length of the hypothesis definition
+        """
         premise_words, hypothesis_words = self.get_elmo_nodes(premise, def_premise, hypothesis, def_hypothesis)
 
         try:
@@ -168,6 +241,16 @@ class Similarity(object):
         return sum(best_sim) / len(best_sim)
 
     def asim_jac_edges_elmo(self, premise, hypothesis, graph_premise, graph_hypothesis, def_premise, def_hypothesis):
+        """
+        Asymmetric Jaccard similarity between the edges based on the node embeddings of the definition graphs
+        :param premise: the premise word
+        :param hypothesis: the hypothesis word
+        :param graph_premise: the definition graph of the premise
+        :param graph_hypothesis: the definition graph of the hypothesis
+        :param def_premise: the definition of the premise
+        :param def_hypothesis: the definition of the hypothesis
+        :return: the ratio of best edge matches per the length of the hypothesis definition
+        """
         premise_words, hypothesis_words = self.get_elmo_nodes(premise, def_premise, hypothesis, def_hypothesis)
 
         prem = [(premise_words[self.clear_node(s)], premise_words[self.clear_node(r)], e['color']) for
@@ -187,7 +270,24 @@ class Similarity(object):
         return sum(sim) / len(hyp)
 
     def asim_jac_bow_elmo(self, def_premise, def_hypothesis):
+        """
+        Asymmetric Jaccard similarity between the word embeddings of the definitions
+        :param def_premise: the definition of the premise
+        :param def_hypothesis: the definition of the hypothesis
+        :return: the ratio of overlap per the length of the hypothesis definition
+        """
         embeddings = self.get_elmo_embeddings(def_premise, def_hypothesis)
         similarities = cosine_similarity(embeddings[0], embeddings[1])
         best_sim = [max(word_sim) for word_sim in np.transpose(similarities)]
         return sum(best_sim) / len(best_sim)
+
+    def word_elmo(self, premise, hypothesis):
+        """
+        The cosine similarity of the words
+        :param premise: the premise word
+        :param hypothesis: the hypothesis word
+        :return: the cosine similarity score
+        """
+        embeddings = self.get_elmo_embeddings(premise, hypothesis)
+        similarity = cosine_similarity([embeddings[0]], [embeddings[1]])
+        return similarity
