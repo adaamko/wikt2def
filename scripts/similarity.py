@@ -1,9 +1,11 @@
 import re
 import json
+import os
 import requests
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 import spacy
+from collections import defaultdict
 from fourlang.stanford_wrapper import StanfordParser
 from .parse_data import load_vec
 from .utils import get_distance
@@ -47,6 +49,28 @@ class Similarity(object):
         self.tgt_word2id = {v: k for k, v in self.tgt_id2word.items()}
         self.nlp_src_lang = spacy.load(self.language_models[src_lang])
         self.nlp_tgt_lang = spacy.load(self.language_models[tgt_lang])
+
+    def init_dictionaries(self, src_lang, tgt_lang):
+        """
+        Initialize dictionaries
+        :param src_lang: the language of the premise
+        :param tgt_lang: the language of the hypothesis
+        :return: None
+        """
+        path = "../dictionaries/" + src_lang + "_dictionary"
+        dictionary_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), path)
+
+        dictionary = defaultdict(list)
+        with open(dictionary_path, "r+") as f:
+            for line in f:
+                line = line.strip().split("\t")
+                if line[0] == src_lang and line[2] == tgt_lang:
+                    dictionary[line[1].lower()].append(line[3].lower())
+
+        self.nlp_src_lang = spacy.load(self.language_models[src_lang])
+        self.nlp_tgt_lang = spacy.load(self.language_models[tgt_lang])
+        self.dictionary = dictionary
+
 
     def call_elmo_service(self, sentences, port=1666):
         """
@@ -110,15 +134,118 @@ class Similarity(object):
         hypothesis_words = self.get_embedding_dictionary([[hypothesis], []] + hypothesis_token_lemmas, embeddings[1])
         return premise_words, hypothesis_words
 
-    def compute_min_distance_scores(self, def_premise, def_hypothesis):
+    def cross_lingual_dictionary_bag(self, def_premise, def_hypothesis, premise_src=True):
+        """
+        Cross-lingual bag of words approach
+        :param def_premise: the definition of the premise
+        :param def_hypothesis: the definition of the hypothesis
+        :param premise_src: whether or not to keep the ordering of the premise and hypothesis
+        :return: the best score
+        """
+        if premise_src:
+            prem =  self.nlp_src_lang(def_premise)
+            hyp = self.nlp_tgt_lang(def_hypothesis)
+        else:
+            hyp =  self.nlp_src_lang(def_premise)
+            prem = self.nlp_tgt_lang(def_hypothesis)    
+
+        filtered_prem = []
+        for token in prem:
+            if not token.is_stop and not token.is_punct:
+                filtered_prem.append(token.lemma_)
+
+        filtered_hyp = []
+        for token in hyp:
+            if not token.is_stop and not token.is_punct:
+                filtered_hyp.append(token.lemma_)
+                
+        dic_elements = []
+        for word in filtered_prem:        
+            if not self.dictionary[word]:
+                dic_elements.append(word)
+            for el in self.dictionary[word]:
+                dic_elements.append(el)
+
+        filtered_prem = set(dic_elements)
+        filtered_hyp = set(filtered_hyp)
+
+        sim = filtered_hyp & filtered_prem
+        if not sim or len(filtered_hyp) == 0:
+            return 0
+        else:
+            return float(len(sim)) / len(filtered_hyp)
+
+    def cross_lingual_dictionary_4lang(self, graph_premise, graph_hypothesis, premise_src=True):
+        """
+        Asymmetric Jaccard similarity between the lowercase nodes of the definition graphs
+        :param graph_premise: the definition graph of the premise
+        :param graph_hypothesis: the definition graph of the hypothesis
+        :param premise_src: whether or not to keep the ordering of the premise and hypothesis
+        :return: the score
+        """
+        if premise_src:
+            prem = set([self.clear_node(node).lower() for node in graph_premise.G.nodes])
+            hyp = set([self.clear_node(node).lower() for node in graph_hypothesis.G.nodes])
+        else:
+            hyp = set([self.clear_node(node).lower() for node in graph_premise.G.nodes])
+            prem = set([self.clear_node(node).lower() for node in graph_hypothesis.G.nodes])  
+
+        dic_elements = []
+        for word in prem:        
+            if not self.dictionary[word]:
+                dic_elements.append(word)
+            for el in self.dictionary[word]:
+                dic_elements.append(el)
+
+        filtered_prem = set(dic_elements)
+        filtered_hyp = set(hyp)
+
+        sim = filtered_hyp & filtered_prem
+        if not sim or len(filtered_hyp) == 0:
+            return 0
+        else:
+            return float(len(sim)) / len(filtered_hyp)
+        
+    def muse_min_distance_4lang(self, graph_premise, graph_hypothesis, premise_src=True):
+        """
+        Asymmetric cross-lingual Jaccard similarity between the nodes of the definition graphs
+        :param graph_premise: the definition graph of the premise
+        :param graph_hypothesis: the definition graph of the hypothesis
+        :param premise_src: whether or not to keep the ordering of the premise and hypothesis
+        :return: the score
+        """
+        if premise_src:
+            prem = set([self.clear_node(node).lower() for node in graph_premise.G.nodes])
+            hyp = set([self.clear_node(node).lower() for node in graph_hypothesis.G.nodes])
+        else:
+            hyp = set([self.clear_node(node).lower() for node in graph_premise.G.nodes])
+            prem = set([self.clear_node(node).lower() for node in graph_hypothesis.G.nodes])    
+        
+        max_score = 0
+        for prem_word in prem:
+            for hyp_word in hyp:
+                try:
+                    distance = get_distance(prem_word, hyp_word, self.src_embeddings, self.tgt_embeddings, self.src_word2id, self.tgt_word2id)
+                except KeyError:
+                    distance = 0
+                if distance > max_score:
+                    max_score = distance
+        return max_score
+
+    def compute_min_distance_scores(self, def_premise, def_hypothesis, premise_src=True):
         """
         Compute the cross-lingual minimum distance between words of the definition sentences
         :param def_premise: the definition of the premise
         :param def_hypothesis: the definition of the hypothesis
+        :param premise_src: whether or not to keep the ordering of the premise and hypothesis
         :return: the best achievable score
         """
-        prem = self.nlp_src_lang(def_premise)
-        hyp = self.nlp_tgt_lang(def_hypothesis)   
+        if premise_src:
+            prem =  self.nlp_src_lang(def_premise)
+            hyp = self.nlp_tgt_lang(def_hypothesis)
+        else:
+            hyp =  self.nlp_src_lang(def_premise)
+            prem = self.nlp_tgt_lang(def_hypothesis)
 
         filtered_prem = []
         for token in prem:
