@@ -36,7 +36,7 @@ class TextTo4lang():
         t = t.strip()
         return t
 
-    def process_text(self, text, expand=False):
+    def process_text(self, text, expand=False, depth=1):
         logging.info("parsing text...")
         preproc_sens = []
         preproc_line = self.preprocess_text(text.strip())
@@ -48,7 +48,7 @@ class TextTo4lang():
                 deps, corefs)
 
         if expand:
-            self.lexicon.expand(graph, self.dep_to_4lang, self.parser_wrapper)
+            self.lexicon.expand(graph, self.dep_to_4lang, self.parser_wrapper, depth=depth)
 
         return graph
 

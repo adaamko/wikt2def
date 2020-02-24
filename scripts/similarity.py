@@ -21,7 +21,7 @@ class Similarity(object):
         self.fourlang_expressions = ["has", "at", "npmod"]
         fourlang_embeddings = self.call_elmo_service(self.fourlang_expressions)
         self.fourlang_expression_embeddings = {expr: emb[0] for (expr, emb) in
-                                               zip(self.fourlang_expressions, fourlang_embeddings)}
+                                              zip(self.fourlang_expressions, fourlang_embeddings)}
 
     def clear_node(self, node):
         """
@@ -336,7 +336,7 @@ class Similarity(object):
         else:
             return float(len(sim)) / len(hyp)
 
-    def asim_jac_nodes(self, graph_hypothesis, graph_premise):
+    def asim_jac_nodes(self, graph_premise, graph_hypothesis):
         """
         Asymmetric Jaccard similarity between the nodes of the definition graphs
         :param graph_premise: the definition graph of the premise
