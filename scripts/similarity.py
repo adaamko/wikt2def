@@ -71,7 +71,6 @@ class Similarity(object):
         self.nlp_tgt_lang = spacy.load(self.language_models[tgt_lang])
         self.dictionary = dictionary
 
-
     def call_elmo_service(self, sentences, port=1666):
         """
         Calls the already running elmo service
@@ -94,14 +93,16 @@ class Similarity(object):
         """
         return self.call_elmo_service([premise, hypothesis], port=port)
 
-    def get_embedding_dictionary(self, token_lemmas, embeddings):
+    def get_embedding_dictionary(self, token_lemmas, embeddings, first_word):
         """
         Gets the dictionary of the lemmas and the corresponding embeddings baseg on existing lemmas and embeddings
         :param token_lemmas: the lemmas in the sentence
         :param embeddings: the embedding of the sentence
+        :param first_word: the first (not lemmatized) word of the sentence
         :return: the dictionary of the lemma-to-token relations
         """
         word_dict = self.fourlang_expression_embeddings.copy()
+        word_dict[first_word] = embeddings[0]
         for (words, embedding) in zip(token_lemmas, embeddings):
             for w in words:
                 word_dict[w] = embedding
@@ -116,23 +117,43 @@ class Similarity(object):
         :param def_hypothesis: the definition of the hypothesis
         :return: the embedding dictionary of the premise and hypothesis
         """
-        if len(def_premise) == 0:
-            premise_token_lemmas, premise_token_words = [], []
-        else:
-            premise_token_lemmas, premise_token_words = self.stanford_parser.lemmatize_text(def_premise)
-        if len(def_hypothesis) == 0:
-            hypothesis_token_lemmas, hypothesis_token_words = [], []
-        else:
-            hypothesis_token_lemmas, hypothesis_token_words = self.stanford_parser.lemmatize_text(def_hypothesis)
+        premise_token_lemmas, premise_token_words = self.stanford_parser.lemmatize_text(": ".join([premise, def_premise]))
+        hypothesis_token_lemmas, hypothesis_token_words = self.stanford_parser.lemmatize_text(": ".join([hypothesis, def_hypothesis]))
 
-        premise_full_def = " ".join([premise, ":"] + premise_token_words)
-        hypothesis_full_def = " ".join([hypothesis, ":"] + hypothesis_token_words)
+        premise_full_def = " ".join(premise_token_words)
+        hypothesis_full_def = " ".join(hypothesis_token_words)
 
         embeddings = self.get_elmo_embeddings(premise_full_def, hypothesis_full_def)
 
-        premise_words = self.get_embedding_dictionary([[premise], []] + premise_token_lemmas, embeddings[0])
-        hypothesis_words = self.get_embedding_dictionary([[hypothesis], []] + hypothesis_token_lemmas, embeddings[1])
+        premise_words = self.get_embedding_dictionary(premise_token_lemmas, embeddings[0], premise)
+        hypothesis_words = self.get_embedding_dictionary(hypothesis_token_lemmas, embeddings[1], hypothesis)
         return premise_words, hypothesis_words
+
+    def get_elmo_edges(self, graph, words):
+        """
+        Create the list of edges containing the triplet of the two node embedding and the edge type
+        :param graph: the graph of the definition
+        :param words: the dictionary of pre-generated embeddings
+        :return: the list of edges
+        """
+        edges = []
+        for (source, receiver, edge) in graph.G.edges(data=True):
+            cleared_source = self.clear_node(source)
+            cleared_receiver = self.clear_node(receiver)
+            if cleared_source not in words:
+                print([k for k in words.keys()])
+                print([self.clear_node(k) for k in graph.G.nodes])
+                s = self.call_elmo_service([cleared_source])[0][0]
+            else:
+                s = words[cleared_source]
+            if cleared_receiver not in words:
+                print([k for k in words.keys()])
+                print([self.clear_node(k) for k in graph.G.nodes])
+                r = self.call_elmo_service([cleared_receiver])[0][0]
+            else:
+                r = words[cleared_receiver]
+            edges.append((s, r, edge['color']))
+        return edges
 
     def cross_lingual_dictionary_bag(self, def_premise, def_hypothesis, premise_src=True):
         """
@@ -343,23 +364,28 @@ class Similarity(object):
         """
         premise_words, hypothesis_words = self.get_elmo_nodes(premise, def_premise, hypothesis, def_hypothesis)
 
-        try:
-            prem = np.asarray([premise_words[self.clear_node(node)] for node in graph_premise.G.nodes])
-        except Exception as e:
-            print(premise)
-            print(def_premise)
-            print([k for k in premise_words.keys()])
-            print([self.clear_node(k) for k in graph_premise.G.nodes])
-            raise e
-        try:
-            hyp = np.asarray([hypothesis_words[self.clear_node(node)] for node in graph_hypothesis.G.nodes])
-        except Exception as e:
-            print(hypothesis)
-            print(def_hypothesis)
-            print([k for k in hypothesis_words.keys()])
-            print([self.clear_node(k) for k in graph_hypothesis.G.nodes])
-            raise e
-
+        prem = []
+        for node in graph_premise.G.nodes:
+            cleared_node = self.clear_node(node)
+            if cleared_node not in premise_words:
+                print(premise)
+                print(def_premise)
+                print([k for k in premise_words.keys()])
+                print([self.clear_node(k) for k in graph_premise.G.nodes])
+                prem.append(self.call_elmo_service([cleared_node])[0][0])
+            else:
+                prem.append(premise_words[cleared_node])
+        hyp = []
+        for node in graph_hypothesis.G.nodes:
+            cleared_node = self.clear_node(node)
+            if cleared_node not in hypothesis_words:
+                print(hyp)
+                print(def_hypothesis)
+                print([k for k in hypothesis_words.keys()])
+                print([self.clear_node(k) for k in graph_premise.G.nodes])
+                hyp.append(self.call_elmo_service([cleared_node])[0][0])
+            else:
+                hyp.append(hypothesis_words[cleared_node])
         try:
             similarities = cosine_similarity(prem, hyp)
         except ValueError as e:
@@ -380,10 +406,8 @@ class Similarity(object):
         """
         premise_words, hypothesis_words = self.get_elmo_nodes(premise, def_premise, hypothesis, def_hypothesis)
 
-        prem = [(premise_words[self.clear_node(s)], premise_words[self.clear_node(r)], e['color']) for
-                          (s, r, e) in graph_premise.G.edges(data=True)]
-        hyp = [(hypothesis_words[self.clear_node(s)], hypothesis_words[self.clear_node(r)], e['color']) for
-                          (s, r, e) in graph_hypothesis.G.edges(data=True)]
+        prem = self.get_elmo_edges(graph_premise, premise_words)
+        hyp = self.get_elmo_edges(graph_hypothesis, hypothesis_words)
         if len(hyp) == 0 or len(prem) == 0:
             return 0
         sim = 0
@@ -416,5 +440,5 @@ class Similarity(object):
         :return: the cosine similarity score
         """
         embeddings = self.get_elmo_embeddings(premise, hypothesis)
-        similarity = cosine_similarity([embeddings[0]], [embeddings[1]])
+        similarity = cosine_similarity(embeddings[0], embeddings[1])[0][0]
         return similarity

@@ -20,6 +20,7 @@ def load_vec(emb_path, nmax=50000):
     embeddings = np.vstack(vectors)
     return embeddings, id2word, word2id
 
+
 def read(lang1, lang2=None, graded=True):
     filename = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../SemEval2020-Task2-Dev")
     language_name = ""

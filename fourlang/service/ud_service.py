@@ -54,7 +54,7 @@ def lemmatize():
             words.append(token.text)
             current_lemma = []
             for word in token.words:
-                if word.index in token.index.split('-') and word.upos != "PUNCT":
+                if word.index in token.index.split('-'):
                     current_lemma += [word.lemma if word.lemma is not None else word.text]
             lemmas.append(current_lemma)
 
