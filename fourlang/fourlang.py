@@ -9,6 +9,7 @@ import os
 import re
 import sys
 import traceback
+from networkx import algorithms
 
 
 class FourLang():
@@ -31,6 +32,25 @@ class FourLang():
 
     def get_graph(self):
         return self.G
+
+    def filter_graph(self, condition):
+        nodes = self.G.nodes(default=None)
+        cond_nodes = []
+        to_delete = []
+        for node in nodes:
+            cl = self.d_clean(node)
+            if condition == cl.split("_")[0]:
+                cond_nodes.append(node)
+        
+        for cond_node in cond_nodes:
+            for node in nodes:
+                if cond_node in self.G and node in self.G:
+                    if algorithms.has_path(self.G, cond_node, node):
+                        to_delete.append(node)
+
+        for node in to_delete:
+            if node in self.G.nodes(default=None):
+                self.G.remove_node(node)
 
     def merge_definition_graph(self, graph):
         graph_root = graph.root
