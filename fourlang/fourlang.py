@@ -54,10 +54,14 @@ class FourLang():
 
     def merge_definition_graph(self, graph):
         graph_root = graph.root
-        graph.G = nx.relabel_nodes(graph.G, {graph_root: self.root})
+        attrs = {self.root: {'expanded': True}}
+        if len(graph.get_nodes()) > 1:
+            attrs[graph_root] = {'expanded': True}
+        #graph.G = nx.relabel_nodes(graph.G, {graph_root: self.root})
         self.G.add_edge(self.root, graph_root, color=0)
         F = nx.compose(self.G, graph.G)
         self.G = F
+        nx.set_node_attributes(self.G, attrs)
 
     def d_clean(self, string):
         s = string
@@ -94,7 +98,7 @@ class FourLang():
             nodes_cleaned.append(cl.split("_")[0])
         return nodes_cleaned
 
-    def to_dot(self):
+    def to_dot(self, marked_nodes=set()):
         lines = [u'digraph finite_state_machine {', '\tdpi=70;']
         # lines.append('\tordering=out;')
         # sorting everything to make the process deterministic
@@ -103,14 +107,21 @@ class FourLang():
         for node, n_data in self.G.nodes(data=True):
             d_node = self.d_clean(node)
             printname = self.d_clean('_'.join(d_node.split('_')[:-1]))
-            if 'expanded' in n_data and not n_data['expanded']:
+            if 'expanded' in n_data and n_data['expanded'] and printname in marked_nodes:
+                node_line = u'\t{0} [shape = circle, label = "{1}", \
+                        style=filled, fillcolor=purple];'.format(
+                    d_node, printname).replace('-', '_')
+            elif 'expanded' in n_data and n_data['expanded']:
                 node_line = u'\t{0} [shape = circle, label = "{1}", \
                         style="filled"];'.format(
-                                d_node, printname).replace('-', '_')
+                    d_node, printname).replace('-', '_')
+            elif printname in marked_nodes:
+                node_line = u'\t{0} [shape = circle, label = "{1}", style=filled, fillcolor=lightblue];'.format(
+                    d_node, printname).replace('-', '_')
             else:
                 node_line = u'\t{0} [shape = circle, label = "{1}"];'.format(
-                        d_node, printname).replace('-', '_')
-                node_lines.append(node_line)
+                    d_node, printname).replace('-', '_')
+            node_lines.append(node_line)
         lines += sorted(node_lines)
 
         edge_lines = []
@@ -119,11 +130,10 @@ class FourLang():
                 d_node1 = self.d_clean(u)
                 d_node2 = self.d_clean(v)
                 edge_lines.append(
-                        u'\t{0} -> {1} [ label = "{2}" ];'.format(
-                            self.d_clean(d_node1), self.d_clean(d_node2),
-                            edata['color']))
+                    u'\t{0} -> {1} [ label = "{2}" ];'.format(
+                        self.d_clean(d_node1), self.d_clean(d_node2),
+                        edata['color']))
 
         lines += sorted(edge_lines)
         lines.append('}')
         return u'\n'.join(lines)
-                        

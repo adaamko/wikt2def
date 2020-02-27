@@ -12,16 +12,17 @@ from .utils import get_distance
 
 
 class Similarity(object):
-    def __init__(self, lang="en"):
+    def __init__(self, lang="en", with_embedding=True):
         self.lang = lang
         self.language_models = {"en": "en_core_web_sm", "it": "it_core_news_sm", "de": "de_core_news_sm"}
         self.cross_lingual_path = "/home/adaamko/data/DMR/"
         self.nlp = spacy.load(self.language_models[self.lang])
         self.stanford_parser = StanfordParser()
         self.fourlang_expressions = ["has", "at", "npmod"]
-        fourlang_embeddings = self.call_elmo_service(self.fourlang_expressions)
-        self.fourlang_expression_embeddings = {expr: emb[0] for (expr, emb) in
-                                              zip(self.fourlang_expressions, fourlang_embeddings)}
+        if with_embedding:
+            fourlang_embeddings = self.call_elmo_service(self.fourlang_expressions)
+            self.fourlang_expression_embeddings = {expr: emb[0] for (expr, emb) in
+                                                   zip(self.fourlang_expressions, fourlang_embeddings)}
 
     def clear_node(self, node):
         """
@@ -368,10 +369,6 @@ class Similarity(object):
         for node in graph_premise.G.nodes:
             cleared_node = self.clear_node(node)
             if cleared_node not in premise_words:
-                print(premise)
-                print(def_premise)
-                print([k for k in premise_words.keys()])
-                print([self.clear_node(k) for k in graph_premise.G.nodes])
                 prem.append(self.call_elmo_service([cleared_node])[0][0])
             else:
                 prem.append(premise_words[cleared_node])
@@ -379,10 +376,6 @@ class Similarity(object):
         for node in graph_hypothesis.G.nodes:
             cleared_node = self.clear_node(node)
             if cleared_node not in hypothesis_words:
-                print(hyp)
-                print(def_hypothesis)
-                print([k for k in hypothesis_words.keys()])
-                print([self.clear_node(k) for k in graph_premise.G.nodes])
                 hyp.append(self.call_elmo_service([cleared_node])[0][0])
             else:
                 hyp.append(hypothesis_words[cleared_node])
