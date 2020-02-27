@@ -23,5 +23,3 @@ def compare_graphs(graph_premise, graph_hypothesis):
     dot_graph_hypothesis = graph_hypothesis.to_dot(marked_nodes)
     return Source(dot_graph_premise), Source(dot_graph_hypothesis)
 
-
-read_output("../nodes_3.txt")
