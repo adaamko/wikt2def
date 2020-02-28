@@ -4,11 +4,20 @@ from nltk.corpus import stopwords as nltk_stopwords
 from networkx import algorithms
 
 
+def nx_to_ud(graph):
+    ud_list = []
+    edges = [edge for edge in graph.edges(data=True)]
+    for in_node, out_node, t in edges:
+        ud_list.append([t["color"], in_node.split("_"), out_node.split("_")])
+
+    return [ud_list]
+
+
 def ud_to_nx(ud):
     G = nx.MultiDiGraph()
     nodes = set()
-    for dependency in ud:
-        type = dependency[0]
+    for dependency in ud[0]:
+        t = dependency[0]
         sender = "_".join(dependency[1])
         receiver = "_".join(dependency[2])
         if sender not in nodes:
@@ -17,12 +26,33 @@ def ud_to_nx(ud):
         if receiver not in nodes:
             G.add_node(receiver)
             nodes.add(receiver)
-        G.add_edge(sender, receiver, color=type)
+        G.add_edge(sender, receiver, color=t)
     return G
 
 
+def filter_ud(graph):
+    blacklist = ["in", "of", "on"]
+    edges = [edge for edge in graph.edges(data=True)]
+    cond_nodes = []
+    for in_node, out_node, t in edges:
+        if t["color"] == "case" and (in_node.split("_")[0] in blacklist or out_node.split("_")[0] in blacklist):
+            cond_nodes.append(in_node)
+
+    to_delete = []
+
+    for cond_node in cond_nodes:
+        for node in graph.nodes():
+            if cond_node in graph and node in graph:
+                if algorithms.has_path(graph, cond_node, node):
+                    to_delete.append(node)
+
+    for node in to_delete:
+        if node in graph.nodes(default=None):
+            graph.remove_node(node)
+
+
 class Lexicon():
-    
+
     def __init__(self, lang):
         self.lexicon = {}
         self.lang_map = {}
@@ -71,6 +101,8 @@ class Lexicon():
                             deps = parse[0]
                             corefs = parse[1]
                             ud_G = ud_to_nx(deps)
+                            filter_ud(ud_G)
+                            deps = nx_to_ud(ud_G)
                             def_graph = dep_to_4lang.get_machines_from_deps_and_corefs(
                                 deps, corefs)
                             graph.merge_definition_graph(def_graph, d_node)
