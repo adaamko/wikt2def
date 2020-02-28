@@ -52,20 +52,18 @@ class FourLang():
             if node in self.G.nodes(default=None):
                 self.G.remove_node(node)
 
-    def merge_definition_graph(self, graph):
+    def merge_definition_graph(self, graph, node):
         graph_root = graph.root
-        attrs = {self.root: {'expanded': True}}
-        if len(graph.get_nodes()) > 1:
-            attrs[graph_root] = {'expanded': True}
+        attrs = {node: {'expanded': True}}
         #graph.G = nx.relabel_nodes(graph.G, {graph_root: self.root})
-        self.G.add_edge(self.root, graph_root, color=0)
+        self.G.add_edge(node, graph_root, color=0)
         F = nx.compose(self.G, graph.G)
         self.G = F
         nx.set_node_attributes(self.G, attrs)
 
     def d_clean(self, string):
         s = string
-        for c in '\\=@-,\'".!:;':
+        for c in '\\=@-,\'".!:;<>/':
             s = s.replace(c, '_')
         s = s.replace('$', '_dollars')
         s = s.replace('%', '_percent')
