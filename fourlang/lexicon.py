@@ -1,6 +1,24 @@
 import os
+import networkx as nx
 from nltk.corpus import stopwords as nltk_stopwords
 from networkx import algorithms
+
+
+def ud_to_nx(ud):
+    G = nx.MultiDiGraph()
+    nodes = set()
+    for dependency in ud:
+        type = dependency[0]
+        sender = "_".join(dependency[1])
+        receiver = "_".join(dependency[2])
+        if sender not in nodes:
+            G.add_node(sender)
+            nodes.add(sender)
+        if receiver not in nodes:
+            G.add_node(receiver)
+            nodes.add(receiver)
+        G.add_edge(sender, receiver, color=type)
+    return G
 
 
 class Lexicon():
@@ -52,6 +70,7 @@ class Lexicon():
                             parse = parser_wrapper.parse_text(definition)
                             deps = parse[0]
                             corefs = parse[1]
+                            ud_G = ud_to_nx(deps)
                             def_graph = dep_to_4lang.get_machines_from_deps_and_corefs(
                                 deps, corefs)
                             graph.merge_definition_graph(def_graph, d_node)
