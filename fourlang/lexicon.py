@@ -71,8 +71,8 @@ class Lexicon():
         with open(definitions_fn, "r") as f:
             for line in f:
                 line = line.split("\t")
-                if line[0].strip() not in self.lexicon:
-                    self.lexicon[line[0].strip().lower()] = line[2].strip().strip("\n").lower()
+                if line[0].strip() not in self.lexicon and len(line[2].strip().strip("\n")) > 5:
+                    self.lexicon[line[0].strip()] = line[2].strip().strip("\n")
 
     def expand(self, graph, dep_to_4lang, parser_wrapper, depth=1):
         if depth == 0:
@@ -88,9 +88,10 @@ class Lexicon():
                             blacklist.append(node.split('_')[0])
         nodes = [node for node in graph.G.nodes(data=True)]
         for d_node, node_data in nodes:
-            d_node = d_node.lower()
             if "expanded" not in node_data:
                 node = graph.d_clean(d_node).split('_')[0]
+                if node not in self.lexicon:
+                    node = node.lower()
                 if node not in self.stopwords and node in self.lexicon and node not in blacklist:
                     if node in self.expanded:
                         def_graph = self.expanded[node]
@@ -98,7 +99,7 @@ class Lexicon():
                     else:
                         definition = self.lexicon[node]
                         if definition:
-                            parse = parser_wrapper.parse_text(definition)
+                            parse = parser_wrapper.parse_text(definition, node)
                             deps = parse[0]
                             corefs = parse[1]
                             ud_G = ud_to_nx(deps)
