@@ -72,7 +72,7 @@ class Lexicon():
             for line in f:
                 line = line.split("\t")
                 if line[0].strip() not in self.lexicon:
-                    self.lexicon[line[0].strip()] = line[2].strip().strip("\n")
+                    self.lexicon[line[0].strip().lower()] = line[2].strip().strip("\n").lower()
 
     def expand(self, graph, dep_to_4lang, parser_wrapper, depth=1):
         if depth == 0:
@@ -86,7 +86,7 @@ class Lexicon():
                     for node in graph.G.nodes:
                         if algorithms.has_path(graph.G, new_blacklist_item, node):
                             blacklist.append(node.split('_')[0])
-        nodes = [node for node in graph.G.nodes(data=True)]
+        nodes = [node.lower() for node in graph.G.nodes(data=True)]
         for d_node, node_data in nodes:
             if "expanded" not in node_data:
                 node = graph.d_clean(d_node).split('_')[0]
