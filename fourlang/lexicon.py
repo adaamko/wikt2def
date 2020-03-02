@@ -86,8 +86,9 @@ class Lexicon():
                     for node in graph.G.nodes:
                         if algorithms.has_path(graph.G, new_blacklist_item, node):
                             blacklist.append(node.split('_')[0])
-        nodes = [node.lower() for node in graph.G.nodes(data=True)]
+        nodes = [node for node in graph.G.nodes(data=True)]
         for d_node, node_data in nodes:
+            d_node = d_node.lower()
             if "expanded" not in node_data:
                 node = graph.d_clean(d_node).split('_')[0]
                 if node not in self.stopwords and node in self.lexicon and node not in blacklist:
