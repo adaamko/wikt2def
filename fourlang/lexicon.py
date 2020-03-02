@@ -2,6 +2,7 @@ import os
 import networkx as nx
 from nltk.corpus import stopwords as nltk_stopwords
 from networkx import algorithms
+import re
 
 
 def nx_to_ud(graph):
@@ -72,7 +73,9 @@ class Lexicon():
             for line in f:
                 line = line.split("\t")
                 if line[0].strip() not in self.lexicon and len(line[2].strip().strip("\n")) > 5:
-                    self.lexicon[line[0].strip()] = line[2].strip().strip("\n")
+                    defi = line[2].strip().strip("\n")
+                    defi = re.sub(re.escape("#"), " ",  defi)
+                    self.lexicon[line[0].strip()] = defi.strip()
 
     def expand(self, graph, dep_to_4lang, parser_wrapper, depth=1):
         if depth == 0:
