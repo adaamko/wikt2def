@@ -103,9 +103,10 @@ class Lexicon():
                             ud_G = ud_to_nx(deps)
                             filter_ud(ud_G)
                             deps = nx_to_ud(ud_G)
-                            def_graph = dep_to_4lang.get_machines_from_deps_and_corefs(
-                                deps, corefs)
-                            graph.merge_definition_graph(def_graph, d_node)
-                            self.expanded[node] = def_graph
+                            if len(deps[0]) > 0:
+                                def_graph = dep_to_4lang.get_machines_from_deps_and_corefs(
+                                    deps, corefs)
+                                graph.merge_definition_graph(def_graph, d_node)
+                                self.expanded[node] = def_graph
 
         self.expand(graph, dep_to_4lang, parser_wrapper, depth-1)
