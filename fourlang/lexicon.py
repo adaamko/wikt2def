@@ -37,10 +37,10 @@ def filter_ud(graph):
     cond_nodes = []
     for in_node, out_node, t in edges:
         if t["color"] == "case" and out_node.split("_")[0] in blacklist:
-            """for in_, out_, t_ in edges:
+            for in_, out_, t_ in edges:
                 if t_["color"] == "nmod" and (in_ == in_node or out_ == in_node):
-                    cond_nodes.append(in_node)"""
-            cond_nodes.append(in_node)
+                    cond_nodes.append(in_node)
+            #cond_nodes.append(in_node)
 
     to_delete = []
 
