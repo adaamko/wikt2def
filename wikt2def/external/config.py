@@ -280,7 +280,7 @@ class EnglishParser(DefaultParserConfig):
     def def_re(self):
         if not self._def_re:
             #self._def_re = re.compile(r'==.*==')
-            self._def_re = re.compile(r'^# (?!.*(obsolete|archaic)).*$',re.M|re.I)
+            self._def_re = re.compile(r'^# (?!.*(obsolete|archaic|historical|rare)).*$',re.M|re.I)
         return self._def_re
 
     @property
