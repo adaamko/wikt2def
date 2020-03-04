@@ -7,6 +7,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 import spacy
 from collections import defaultdict
 from fourlang.stanford_wrapper import StanfordParser
+from fourlang.fourlang import FourLang
 from .parse_data import load_vec
 from .utils import get_distance
 
@@ -30,7 +31,7 @@ class Similarity(object):
         :param node: the text to clear
         :return: the cleared text
         """
-        return re.sub(r'_[0-9]*', '', node)
+        return re.sub(r'_[0-9][0-9]*', '', node)
 
     def init_cross_lingual_embeddings(self, src_lang, tgt_lang):
         """
@@ -337,6 +338,28 @@ class Similarity(object):
         else:
             return float(len(sim)) / len(hyp)
 
+    def multi_def_best_match(self, graph_premises, graph_hypothesises, similarity_function, return_graphs=False):
+        if len(graph_premises) > 0 and len(graph_hypothesises) > 0:
+            best_pair = (graph_premises[0], graph_hypothesises[0])
+            best_match = 0
+            for graph_premise in graph_premises:
+                for graph_hypothesis in graph_hypothesises:
+                    match = similarity_function(graph_premise, graph_hypothesis)
+                    if match > best_match:
+                        best_match = match
+                        best_pair = (graph_premise, graph_hypothesis)
+            if return_graphs:
+                return best_match, best_pair
+            return best_match
+        elif return_graphs:
+            if len(graph_premises) > 0:
+                return 0, (graph_premises[0], FourLang())
+            elif len(graph_hypothesises) > 0:
+                return 0, (FourLang(), graph_hypothesises[0])
+            else:
+                return 0, (FourLang(), FourLang())
+        return 0
+
     def asim_jac_nodes(self, graph_premise, graph_hypothesis):
         """
         Asymmetric Jaccard similarity between the nodes of the definition graphs
@@ -379,10 +402,7 @@ class Similarity(object):
                 hyp.append(self.call_elmo_service([cleared_node])[0][0])
             else:
                 hyp.append(hypothesis_words[cleared_node])
-        try:
-            similarities = cosine_similarity(prem, hyp)
-        except ValueError as e:
-            raise e
+        similarities = cosine_similarity(prem, hyp)
         best_sim = [max(word_sim) for word_sim in np.transpose(similarities)]
         return sum(best_sim) / len(best_sim)
 
