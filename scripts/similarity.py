@@ -3,10 +3,13 @@ import json
 import os
 import requests
 import numpy as np
+import copy
 from sklearn.metrics.pairwise import cosine_similarity
 import spacy
 from collections import defaultdict
+from networkx import algorithms
 from fourlang.stanford_wrapper import StanfordParser
+from fourlang.fourlang import FourLang
 from .parse_data import load_vec
 from .utils import get_distance
 
@@ -30,7 +33,7 @@ class Similarity(object):
         :param node: the text to clear
         :return: the cleared text
         """
-        return re.sub(r'_[0-9]*', '', node)
+        return re.sub(r'_[0-9][0-9]*', '', node)
 
     def init_cross_lingual_embeddings(self, src_lang, tgt_lang):
         """
@@ -337,6 +340,40 @@ class Similarity(object):
         else:
             return float(len(sim)) / len(hyp)
 
+    def multi_def_best_match(self, graph_premises, graph_hypothesises, similarity_function, return_graphs=False):
+        """
+        Find the best matching premise and hypothesis
+        :param graph_premises: the definition graph of the premise
+        :param graph_hypothesises: the definition graph of the hypothesis
+        :param similarity_function: the similarity function to use
+        :param return_graphs: whether to return the graphs
+        :return: the score and the best graph pair
+        """
+        if len(graph_premises) > 0 and len(graph_hypothesises) > 0:
+            best_pair = (graph_premises[0], graph_hypothesises[0])
+            best_match = 0
+            for graph_premise in graph_premises:
+                for graph_hypothesis in graph_hypothesises:
+                    match = similarity_function(graph_premise, graph_hypothesis)
+                    if match > best_match:
+                        best_match = match
+                        best_pair = (graph_premise, graph_hypothesis)
+                    if best_match == 1.0:
+                        break
+                if best_match == 1.0:
+                    break
+            if return_graphs:
+                return best_match, best_pair
+            return best_match
+        elif return_graphs:
+            if len(graph_premises) > 0:
+                return 0, (graph_premises[0], FourLang())
+            elif len(graph_hypothesises) > 0:
+                return 0, (FourLang(), graph_hypothesises[0])
+            else:
+                return 0, (FourLang(), FourLang())
+        return 0
+
     def asim_jac_nodes(self, graph_premise, graph_hypothesis):
         """
         Asymmetric Jaccard similarity between the nodes of the definition graphs
@@ -351,6 +388,77 @@ class Similarity(object):
             return 0
         else:
             return float(len(sim)) / len(hyp)
+    def asim_jac_nodes_graded(self, graph_premise, graph_hypothesis):
+        """
+        Asymmetric Jaccard similarity between the nodes of the definition graphs
+        :param graph_premise: the definition graph of the premise
+        :param graph_hypothesis: the definition graph of the hypothesis
+        :return: the ratio of overlapping nodes per the length of the hypothesis definition
+        """
+        prem = [(node, self.clear_node(node)) for node in graph_premise.G.nodes]
+        hyp = [(node, self.clear_node(node)) for node in graph_hypothesis.G.nodes]
+        sim = 0
+        for hyp_node in hyp:
+            if hyp_node[1] in [p[1] for p in prem]:
+                try:
+                    shortest_path = algorithms.shortest_path(graph_premise.G, graph_premise.root, prem[[p[1] for p in prem].index(hyp_node[1])][0])
+                    print("ok")
+                    hypothesis_path = algorithms.shortest_path(graph_hypothesis.G, graph_hypothesis.root, hyp_node[0])
+                    if shortest_path in [0, 1]:
+                        sim += max(hypothesis_path, 2)
+                    elif hypothesis_path == 0:
+                        sim += 1
+                    else:
+                        sim += hypothesis_path / (shortest_path - 1)
+                except Exception as e:
+                    sim += 0.5
+        if sim == 0 or len(hyp) == 0:
+            print(sim)
+            return 0
+        else:
+            return float(sim) / float(len(hyp))
+
+    def asim_jac_nodes_with_backup(self, graph_premise, graph_hypothesis):
+        """
+        Asymmetric Jaccard similarity between the nodes of the definition graphs, if the score is not 1 it calculates
+        the asymmetric Jaccard similarity between the edges without the hypothesis root node
+        :param graph_premise: the definition graph of the premise
+        :param graph_hypothesis: the definition graph of the hypothesis
+        :return: the ratio of overlapping nodes per the length of the hypothesis definition
+        """
+        node_score = self.asim_jac_nodes(graph_premise, graph_hypothesis)
+        edge_score = 0
+        if 0.0 < node_score < 1.0:
+            root = graph_hypothesis.d_clean(graph_hypothesis.root).split("_")[0]
+            if root in graph_premise.get_nodes():
+                root_id = [node for node in graph_premise.G.nodes() if self.clear_node(node) == root][0]
+                graph_premise_only_zero = copy.deepcopy(graph_premise)
+
+                delete_list = []
+
+                for edge in graph_premise_only_zero.G.adj.items():
+                    for output_node in edge[1].items():
+                        inner_delete_list = []
+                        for edge_type in output_node[1].items():
+                            if edge_type[1]["color"]:
+                                inner_delete_list.append(edge_type[0])
+                        if len(output_node[1]) < 1:
+                            delete_list.append(output_node[0])
+                        for inner_del in inner_delete_list:
+                            del output_node[1]._atlas[inner_del]
+                    for to_del in delete_list:
+                        del edge[1]._atlas[to_del]
+                try:
+                    if algorithms.has_path(graph_premise_only_zero.G, graph_premise.root, root_id):
+                        return 1.0
+                except Exception as e:
+                    print("Error occured:", e)
+            graph_hypothesis_wo_root = copy.deepcopy(graph_hypothesis)
+            graph_hypothesis_wo_root.G.remove_node(graph_hypothesis_wo_root.root)
+            #edge_score = self.asim_jac_edges(graph_premise, graph_hypothesis_wo_root)
+            return self.asim_jac_edges(graph_premise, graph_hypothesis_wo_root)
+        #return max([node_score, edge_score])
+        return node_score
 
     def asim_jac_nodes_elmo(self, premise, hypothesis, graph_premise, graph_hypothesis, def_premise, def_hypothesis):
         """
@@ -379,10 +487,7 @@ class Similarity(object):
                 hyp.append(self.call_elmo_service([cleared_node])[0][0])
             else:
                 hyp.append(hypothesis_words[cleared_node])
-        try:
-            similarities = cosine_similarity(prem, hyp)
-        except ValueError as e:
-            raise e
+        similarities = cosine_similarity(prem, hyp)
         best_sim = [max(word_sim) for word_sim in np.transpose(similarities)]
         return sum(best_sim) / len(best_sim)
 
