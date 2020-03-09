@@ -25,7 +25,9 @@ def nx_to_ud(graph):
 def ud_to_nx(ud):
     G = nx.MultiDiGraph()
     nodes = set()
-    for dep in ud:
+    iter_ud = ud if len(ud[0]) < 3 else [ud[0]]
+    #iter_ud = [ud[0]]
+    for dep in iter_ud:
         for dependency in dep:
             t = dependency[0]
             sender = "_".join(dependency[1])
@@ -42,6 +44,7 @@ def ud_to_nx(ud):
 
 def filter_ud(graph):
     blacklist = ["in", "of", "on"]
+    not_words = ["no", "not", "nicht", "kein"]
     edges = [edge for edge in graph.edges(data=True)]
     cond_nodes = []
     for in_node, out_node, t in edges:
@@ -49,7 +52,8 @@ def filter_ud(graph):
             for in_, out_, t_ in edges:
                 if t_["color"] == "nmod" and (in_ == in_node or out_ == in_node):
                     cond_nodes.append(in_node)
-            #cond_nodes.append(in_node)
+        if in_node.split("_")[0] in not_words or out_node.split("_")[0] in not_words:
+            cond_nodes.append(in_node)
 
     to_delete = []
 
@@ -98,7 +102,8 @@ class Lexicon:
                     if line[0].strip() not in self.lexicon_list:
                         self.lexicon[word] = defi.strip()
                         self.lexicon_list[word] = []
-                    self.lexicon_list[word].append(defi.strip())
+                    if defi.strip() != word:
+                        self.lexicon_list[word].append(defi.strip())
 
     def expand(self, graph, dep_to_4lang, parser_wrapper, depth=1):
         if depth == 0:
