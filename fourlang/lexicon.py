@@ -89,10 +89,12 @@ class Lexicon():
                 for a in adj.items():
                     if {'color': 2} in a[1].values() or {'color': 1} in a[1].values():
                         new_blacklist_item = a[0]
-                        blacklist.append(new_blacklist_item.split('_')[0])
                         for node in graph.G.nodes:
                             if algorithms.has_path(graph.G, new_blacklist_item, node):
-                                blacklist.append(node.split('_')[0])
+                                blacklist_node = graph.d_clean(node)
+                                blacklist.append(blacklist_node.split('_')[0])
+                        new_blacklist_item = graph.d_clean(new_blacklist_item)
+                        blacklist.append(new_blacklist_item.split('_')[0])
         nodes = [node for node in graph.G.nodes(data=True)]
         for d_node, node_data in nodes:
             if "expanded" not in node_data:
