@@ -67,9 +67,9 @@ def filter_ud(graph, blacklist):
             graph.remove_node(node)
 
 
-def filter_graph(deps):
+def filter_graph(deps, blacklist):
     ud_G = ud_to_nx(deps)
-    filter_ud(ud_G)
+    filter_ud(ud_G, blacklist)
     return nx_to_ud(ud_G)
 
 
@@ -105,7 +105,7 @@ class Lexicon:
                     if defi.strip() != word:
                         self.lexicon_list[word].append(defi.strip())
 
-    def expand(self, graph, dep_to_4lang, parser_wrapper, depth=1, blacklist=[], filt = True):
+    def expand(self, graph, dep_to_4lang, parser_wrapper, depth=1, blacklist=[], filt=True):
         if depth == 0:
             return
 
@@ -138,7 +138,7 @@ class Lexicon:
                         definition = self.lexicon[node]
                         if definition:
                             parse = parser_wrapper.parse_text(definition, node)
-                            deps = filter_graph(parse[0])
+                            deps = filter_graph(parse[0], blacklist)
                             corefs = parse[1]
                             ud_G = ud_to_nx(deps)
                             filter_ud(ud_G, blacklist)
@@ -150,7 +150,7 @@ class Lexicon:
 
         self.expand(graph, dep_to_4lang, parser_wrapper, depth-1, blacklist, filt)
         
-    def expand_with_every_def(self, graph, dep_to_4lang, parser_wrapper, depth=1):
+    def expand_with_every_def(self, graph, dep_to_4lang, parser_wrapper, depth=1, blacklist=[]):
         if depth <= 0:
             raise ValueError("Cannot expand with depth {}".format(depth))
         nodes = [node for node in graph.G.nodes(data=True)]
@@ -169,7 +169,7 @@ class Lexicon:
                 if definition:
                     current_graph = copy.deepcopy(graph)
                     parse = parser_wrapper.parse_text(definition)
-                    deps = filter_graph(parse[0])
+                    deps = filter_graph(parse[0], blacklist)
                     corefs = parse[1]
                     if len(deps[0]) > 0:
                         def_graph = dep_to_4lang.get_machines_from_deps_and_corefs(deps, corefs)

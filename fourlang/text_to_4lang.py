@@ -50,7 +50,7 @@ class TextTo4lang():
             if multi_definition:
                 return self.lexicon.expand_with_every_def(graph, self.dep_to_4lang, self.parser_wrapper, depth=depth)
             else:
-            self.lexicon.expand(graph, self.dep_to_4lang, self.parser_wrapper, depth=depth, blacklist=blacklist, filt=filt)
+                self.lexicon.expand(graph, self.dep_to_4lang, self.parser_wrapper, depth=depth, blacklist=blacklist, filt=filt)
 
         return graph
 
