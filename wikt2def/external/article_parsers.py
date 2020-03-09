@@ -144,7 +144,10 @@ class DefaultArticleParser(ArticleParser):
                 com_match = self.cfg.com_re.findall(definition)
                 if com_match:
                     for c_m in com_match:
-                        definition = re.sub(re.escape(c_m), re.escape(c_m.split("|")[-1].strip("}")), definition)
+                        if self.cfg.wc == "it":
+                            definition = re.sub(re.escape(c_m), "", definition)
+                        else:
+                            definition = re.sub(re.escape(c_m), re.escape(c_m.split("|")[-1].strip("}")), definition)
                     if len(definition) > 1:
                         definitions.append((title, group, self.trim_translation(definition)))
                 else:
