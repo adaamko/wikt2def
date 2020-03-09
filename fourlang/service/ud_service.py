@@ -29,8 +29,12 @@ def parse():
             curr_dep = []
             curr_dep.append(dep[1])
 
-            h = dep[0].lemma if dep[0].lemma is not None else dep[0].text
-            d = dep[2].lemma if dep[2].lemma is not None else dep[2].text
+            if len(sentence.split()) == 1:
+                h = dep[0].text
+                d = dep[2].text
+            else:
+                h = dep[0].lemma if dep[0].lemma is not None else dep[0].text
+                d = dep[2].lemma if dep[2].lemma is not None else dep[2].text
 
             curr_dep.append([h, dep[0].index])
             curr_dep.append([d, dep[2].index])
