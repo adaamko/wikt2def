@@ -63,7 +63,7 @@ class FourLang():
 
     def d_clean(self, string):
         s = string
-        for c in '\\=@-,\'".!:;<>/{}[]()#^':
+        for c in '\\=@-,\'".!:;<>/{}[]()#^?':
             s = s.replace(c, '_')
         s = s.replace('$', '_dollars')
         s = s.replace('%', '_percent')

@@ -49,8 +49,8 @@ def filter_ud(graph, blacklist):
     for in_node, out_node, t in edges:
         if t["color"] == "case" and out_node.split("_")[0] in blacklist:
             for in_, out_, t_ in edges:
-                if t_["color"] == "nmod" and (out_ == in_node):
-                    cond_nodes.append(in_)
+                if t_["color"] == "nmod" and (in_ == in_node or out_ == in_node):
+                    cond_nodes.append(in_node)
         if in_node.split("_")[0] in not_words or out_node.split("_")[0] in not_words:
             cond_nodes.append(in_node)
 
@@ -108,8 +108,8 @@ class Lexicon:
     def expand(self, graph, dep_to_4lang, parser_wrapper, depth=1, blacklist=[], filt=True):
         if depth == 0:
             return
-
-        if filt:    
+        one_two_blacklist = []
+        if filt:
             for adj in graph.G._adj.values():
                 for a in adj.items():
                     if {'color': 2} in a[1].values() or {'color': 1} in a[1].values():
@@ -117,9 +117,9 @@ class Lexicon:
                         for node in graph.G.nodes:
                             if algorithms.has_path(graph.G, new_blacklist_item, node):
                                 blacklist_node = graph.d_clean(node)
-                                blacklist.append(blacklist_node.split('_')[0])
+                                one_two_blacklist.append(blacklist_node.split('_')[0])
                         new_blacklist_item = graph.d_clean(new_blacklist_item)
-                        blacklist.append(new_blacklist_item.split('_')[0])
+                        one_two_blacklist.append(new_blacklist_item.split('_')[0])
         nodes = [node for node in graph.G.nodes(data=True)]
         for d_node, node_data in nodes:
             if "expanded" not in node_data:
@@ -130,7 +130,7 @@ class Lexicon:
                     node = node.capitalize()
                     if node not in self.lexicon:
                         node = node.lower()
-                if node not in self.stopwords and node in self.lexicon and node not in blacklist:
+                if node not in self.stopwords and node in self.lexicon and node not in one_two_blacklist:
                     if node in self.expanded:
                         def_graph = self.expanded[node]
                         graph.merge_definition_graph(def_graph, d_node)
