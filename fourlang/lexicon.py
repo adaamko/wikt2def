@@ -141,7 +141,7 @@ class Lexicon:
                             deps = filter_graph(parse[0], blacklist)
                             corefs = parse[1]
                             ud_G = ud_to_nx(deps)
-                            filter_ud(ud_G, blacklist)
+                            #filter_ud(ud_G, blacklist)
                             deps = nx_to_ud(ud_G)
                             if len(deps[0]) > 0:
                                 def_graph = dep_to_4lang.get_machines_from_deps_and_corefs(deps, corefs)

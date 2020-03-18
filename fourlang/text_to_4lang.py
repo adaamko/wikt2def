@@ -35,14 +35,29 @@ class TextTo4lang():
         t = t.strip()
         return t
 
+    def process_deps(self, deps, expand=False, depth=1, blacklist=[], filt=True, multi_definition=False):
+        corefs = []
+        graph = self.dep_to_4lang.get_machines_from_deps_and_corefs(
+                deps, corefs)
+        
+        if expand:
+            if multi_definition:
+                return self.lexicon.expand_with_every_def(graph, self.dep_to_4lang, self.parser_wrapper, depth=depth)
+            else:
+                self.lexicon.expand(graph, self.dep_to_4lang, self.parser_wrapper, depth=depth, blacklist=blacklist, filt=filt)
+
+        return graph
+
+
     def process_text(self, text, expand=False, depth=1, blacklist=[], filt=True, multi_definition=False):
         logging.info("parsing text...")
         preproc_sens = []
-        preproc_line = self.preprocess_text(text.strip())
+        preproc_line = self.preprocess_text(str(text).strip())
         preproc_sens.append(preproc_line)
         parse = self.parser_wrapper.parse_text("\n".join(preproc_sens))
         deps = parse[0]
         corefs = parse[1]
+
         graph = self.dep_to_4lang.get_machines_from_deps_and_corefs(
                 deps, corefs)
 

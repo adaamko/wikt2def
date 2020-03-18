@@ -43,15 +43,34 @@ def read(lang1, lang2=None, graded=True):
 
 def get_deps(ud):
     deps = []
+    dep_to_id = {}
+    ids = 0
     for i in range(0, len(ud) - 2, 2):
         t = ud[i + 1]
         sender = ud[i]
         receiver = ud[i + 2]
+        
+        if sender not in dep_to_id:
+            dep_to_id[sender] = ids
+            sender_list = [sender, str(ids)]
+            ids+=1
+        else:
+            sender_id = dep_to_id[sender]
+            sender_list = [sender, str(sender_id)]
+        
+        if receiver not in dep_to_id:
+            dep_to_id[receiver] = ids
+            receiver_list = [receiver, str(ids)]
+            ids+=1
+        else:
+            receiver_id = dep_to_id[receiver]
+            receiver_list = [receiver, str(receiver_id)]
+            
         if t.endswith("^-"):
             t = t.strip("^-")
-            sender, receiver = receiver, sender
-        deps.append([t, sender, receiver])
-    return deps
+            sender_list, receiver_list = receiver_list, sender_list
+        deps.append([t, sender_list, receiver_list])
+    return [deps]
 
 
 def build_graph(df):
@@ -96,7 +115,3 @@ def read_sherliic(path_to_data, ud_path=None, keep_context=False, just_ab=True):
     sherliic_data.score[sherliic_data.score == "yes"] = 1
     sherliic_data.score[sherliic_data.score == "no"] = 0
     return sherliic_data
-
-
-data = read_sherliic("../../sherliic/dev.csv", ud_path="../../sherliic/relation_index.tsv", keep_context=True)
-build_graph(data)
