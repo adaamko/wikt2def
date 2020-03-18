@@ -39,3 +39,21 @@ def read(lang1, lang2=None, graded=True):
     #     df.hypothesis = df.hypothesis.str.replace(lang1 + "_", "")
     #     df.hypothesis = df.hypothesis.str.replace(lang2 + "_", "")
     return df
+
+
+def read_sherliic(path_to_data, keep_context=False):
+    abs_path = os.path.abspath(path_to_data)
+    if keep_context:
+        sherliic_data = pd.read_csv(abs_path, delimiter=",",
+                                    usecols=["prem_argleft", "prem_middle", "prem_argright", "hypo_argleft",
+                                             "hypo_middle", "hypo_argright", "is_entailment"])
+    else:
+        sherliic_data = pd.read_csv(abs_path, delimiter=",",
+                                    usecols=["prem_middle", "hypo_middle", "is_entailment"])
+    sherliic_data = sherliic_data.rename(columns={"prem_middle": "premise", "hypo_middle": "hypothesis",
+                                                  "is_entailment": "score"})
+    sherliic_data = sherliic_data.replace({"score": {"yes": 1, "no": 0}})
+    return sherliic_data
+
+
+#read_sherliic("../../sherliic/dev.csv")
