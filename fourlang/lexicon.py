@@ -117,9 +117,12 @@ class Lexicon:
                         for node in graph.G.nodes:
                             if algorithms.has_path(graph.G, new_blacklist_item, node):
                                 blacklist_node = graph.d_clean(node)
-                                one_two_blacklist.append(blacklist_node.split('_')[0])
+                                if blacklist_node != graph.root:
+                                    one_two_blacklist.append(blacklist_node.split('_')[0])
                         new_blacklist_item = graph.d_clean(new_blacklist_item)
-                        one_two_blacklist.append(new_blacklist_item.split('_')[0])
+                        if new_blacklist_item != graph.root:
+                            one_two_blacklist.append(new_blacklist_item.split('_')[0])
+       
         nodes = [node for node in graph.G.nodes(data=True)]
         for d_node, node_data in nodes:
             if "expanded" not in node_data:
