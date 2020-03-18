@@ -41,6 +41,31 @@ def read(lang1, lang2=None, graded=True):
     return df
 
 
+def get_deps(ud):
+    deps = []
+    for i in range(0, len(ud) - 2, 2):
+        t = ud[i + 1]
+        sender = ud[i]
+        receiver = ud[i + 2]
+        if t.endswith("^-"):
+            t = t.strip("^-")
+            sender, receiver = receiver, sender
+        deps.append([t, sender, receiver])
+    return deps
+
+
+def build_graph(df):
+    data_frame = pd.DataFrame(columns=["premise", "hypothesis", "score"])
+    for i in range(len(df)):
+        row = {"score": df.score[i]}
+        premise_ud = [df.prem_argleft[i]] + df.premise_ud[i].split("___") + [df.prem_argright[i]]
+        hypothesis_ud = [df.hypo_argleft[i]] + df.hypothesis_ud[i].split("___") + [df.hypo_argright[i]]
+        row["premise"] = get_deps(premise_ud)
+        row["hypothesis"] = get_deps(hypothesis_ud)
+        data_frame.loc[i] = row
+    return data_frame
+
+
 def read_sherliic(path_to_data, ud_path=None, keep_context=False, just_ab=True):
     abs_path = os.path.abspath(path_to_data)
     sherliic_data = pd.read_csv(abs_path, delimiter=",",
@@ -71,3 +96,7 @@ def read_sherliic(path_to_data, ud_path=None, keep_context=False, just_ab=True):
     sherliic_data.score[sherliic_data.score == "yes"] = 1
     sherliic_data.score[sherliic_data.score == "no"] = 0
     return sherliic_data
+
+
+data = read_sherliic("../../sherliic/dev.csv", ud_path="../../sherliic/relation_index.tsv", keep_context=True)
+build_graph(data)
