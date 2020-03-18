@@ -11,7 +11,7 @@ def read_output(file_path, threshold=1.0):
         hypothesis = row[1].hypothesis
         predicted = float(row[1].predicted)
         gold = float(row[1].gold)
-        if (predicted >= threshold)*1 != gold and gold == 0.0:
+        if (predicted >= threshold)*1 == gold and gold == 1.0:
             print("{}\t{}\t{}\t{}".format(premise, hypothesis, predicted, gold))
             i += 1
     print(i)

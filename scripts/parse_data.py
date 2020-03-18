@@ -52,8 +52,6 @@ def read_sherliic(path_to_data, keep_context=False):
                                     usecols=["prem_middle", "hypo_middle", "is_entailment"])
     sherliic_data = sherliic_data.rename(columns={"prem_middle": "premise", "hypo_middle": "hypothesis",
                                                   "is_entailment": "score"})
-    sherliic_data = sherliic_data.replace({"score": {"yes": 1, "no": 0}})
+    sherliic_data.score[sherliic_data.score == "yes"] = 1
+    sherliic_data.score[sherliic_data.score == "no"] = 0
     return sherliic_data
-
-
-#read_sherliic("../../sherliic/dev.csv")
