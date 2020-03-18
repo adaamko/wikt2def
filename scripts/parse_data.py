@@ -41,15 +41,31 @@ def read(lang1, lang2=None, graded=True):
     return df
 
 
-def read_sherliic(path_to_data, keep_context=False):
+def read_sherliic(path_to_data, ud_path=None, keep_context=False, just_ab=True):
     abs_path = os.path.abspath(path_to_data)
-    if keep_context:
-        sherliic_data = pd.read_csv(abs_path, delimiter=",",
-                                    usecols=["prem_argleft", "prem_middle", "prem_argright", "hypo_argleft",
-                                             "hypo_middle", "hypo_argright", "is_entailment"])
+    sherliic_data = pd.read_csv(abs_path, delimiter=",",
+                                usecols=["premise_relation", "prem_argleft", "prem_middle", "prem_argright",
+                                         "hypothesis_relation", "hypo_argleft", "hypo_middle", "hypo_argright",
+                                         "is_entailment"])
+    if not ud_path:
+        sherliic_data = sherliic_data.drop(columns=["premise_relation", "hypothesis_relation"])
     else:
-        sherliic_data = pd.read_csv(abs_path, delimiter=",",
-                                    usecols=["prem_middle", "hypo_middle", "is_entailment"])
+        ud_by_id = pd.read_csv(ud_path, delimiter="\t", header=None, names=["id", "ud"])
+        sherliic_data = sherliic_data.join(ud_by_id, on="premise_relation")
+        sherliic_data = sherliic_data.rename(columns={"ud": "premise_ud"})
+        sherliic_data = sherliic_data.drop(columns=["id", "premise_relation"])
+
+        sherliic_data = sherliic_data.join(ud_by_id, on="hypothesis_relation")
+        sherliic_data = sherliic_data.rename(columns={"ud": "hypothesis_ud"})
+        sherliic_data = sherliic_data.drop(columns=["id", "hypothesis_relation"])
+    if not keep_context:
+        sherliic_data = sherliic_data.drop(columns=["prem_argleft", "prem_argright", "hypo_argleft", "hypo_argright"])
+    elif just_ab:
+        sherliic_data.prem_argleft = sherliic_data.prem_argleft.str.split("[").str[1].str.strip("]")
+        sherliic_data.prem_argright = sherliic_data.prem_argright.str.split("[").str[1].str.strip("]")
+        sherliic_data.hypo_argleft = sherliic_data.hypo_argleft.str.split("[").str[1].str.strip("]")
+        sherliic_data.hypo_argright = sherliic_data.hypo_argright.str.split("[").str[1].str.strip("]")
+
     sherliic_data = sherliic_data.rename(columns={"prem_middle": "premise", "hypo_middle": "hypothesis",
                                                   "is_entailment": "score"})
     sherliic_data.score[sherliic_data.score == "yes"] = 1
