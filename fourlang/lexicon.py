@@ -108,11 +108,11 @@ class Lexicon:
     def expand(self, graph, dep_to_4lang, parser_wrapper, depth=1, blacklist=[], filt=True):
         if depth == 0:
             return
-        one_two_blacklist = []
+        one_two_blacklist = ["A","a","b","B"]
         if filt:
             for adj in graph.G._adj.values():
                 for a in adj.items():
-                    if {'color': 2} in a[1].values() or {'color': 1} in a[1].values():
+                    if {'color': 2} in a[1].values() in a[1].values():
                         new_blacklist_item = a[0]
                         for node in graph.G.nodes:
                             if algorithms.has_path(graph.G, new_blacklist_item, node):
