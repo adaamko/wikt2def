@@ -112,7 +112,7 @@ class Lexicon:
         if filt:
             for adj in graph.G._adj.values():
                 for a in adj.items():
-                    if {'color': 2} in a[1].values() in a[1].values():
+                    if {'color': 2} in a[1].values():
                         new_blacklist_item = a[0]
                         for node in graph.G.nodes:
                             if algorithms.has_path(graph.G, new_blacklist_item, node):
