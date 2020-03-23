@@ -4,6 +4,7 @@ import os
 import re
 import sys
 import argparse
+import numpy as np
 
 from .dep_to_4lang import DepTo4lang
 from .stanford_wrapper import StanfordParser
@@ -37,6 +38,10 @@ class TextTo4lang():
 
     def process_deps(self, deps, expand=False, depth=1, blacklist=[], filt=True, multi_definition=False):
         corefs = []
+        if "root" not in [d[0] for d in deps[0]]:
+            unique, counts = np.unique(np.array([d[1] for d in deps[0]]), axis=0, return_counts=True)
+            index = np.argmax(counts)
+            deps[0].append(["root", ["ROOT", -1], unique[index].tolist()])
         graph = self.dep_to_4lang.get_machines_from_deps_and_corefs(
                 deps, corefs)
         
