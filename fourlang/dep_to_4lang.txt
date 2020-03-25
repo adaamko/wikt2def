@@ -19,7 +19,7 @@ det	-,-
 det:predet	-,-
 discourse	-,-
 expl	-,-
-fixed	-,-lex  
+fixed	-,-
 flat	-,-
 goeswith	-,-
 iobj	-,-
