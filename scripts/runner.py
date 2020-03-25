@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 preds = []
 text_to_4lang = TextTo4lang(lang="en")
-df = read_sherliic("../../sherliic/dev.csv", "../../sherliic/relation_index.tsv", keep_context=True)
+df = read_sherliic("../../sherliic/dev.csv", "../../sherliic/relation_index.tsv", keep_context=True, just_ab=True)
 data_frame = build_graph(df)
 lexicon = Lexicon(lang="en")
 similarity = Similarity(with_embedding=False)
@@ -17,8 +17,8 @@ with open("nodes_2_sherliic.txt", "w") as f:
         premise = data_frame.premise[index]
         hypothesis = data_frame.hypothesis[index]
         score = data_frame.score[index]
-        graph_premise = text_to_4lang.process_deps(premise, expand=True, depth=2, blacklist=["in", "on", "of"])
-        graph_hypothesis = text_to_4lang.process_deps(hypothesis, expand=True, depth=1, blacklist=["in", "on", "of"])
+        graph_premise = text_to_4lang.process_deps(premise, method="expand", depth=2, blacklist=["in", "on", "of"])
+        graph_hypothesis = text_to_4lang.process_deps(hypothesis, method="expand", depth=1, blacklist=["in", "on", "of"])
         pred = similarity.asim_jac_edges(graph_premise, graph_hypothesis)
 
         Source(graph_premise.to_dot()).render('nodes_2_sherliic/{}_{}_premise.gv'.format(

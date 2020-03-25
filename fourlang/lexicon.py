@@ -100,9 +100,20 @@ class Lexicon:
                 if len(line[2].strip().strip("\n")) > 5:
                     word = line[0].strip()
                     defi = line[2].strip().strip("\n")
-                    defi = re.sub(re.escape("#"), " ",  defi)
-                    defi = re.sub("transitive", "",  defi)
-                    defi = re.sub("intransitive", "",  defi)
+                    defi = re.sub(re.escape("#"), " ",  defi).strip()
+                    defi = re.sub(r"^intransitive", "",  defi)
+                    defi = re.sub(r"^ditransitive", "",  defi)
+                    defi = re.sub(r"^ambitransitive", "",  defi)
+                    defi = re.sub(r"^transitive", "",  defi)
+                    defi = re.sub(r"^uncountable", "",  defi)
+                    defi = re.sub(r"^countable", "",  defi)
+                    defi = re.sub(r"^pulative ", "",  defi)
+                    defi = re.sub(r"^\. ", "",  defi)
+                    defi_words = defi.split(" ")
+                    first_words = defi_words[0].split(',')
+                    if len(first_words) > 1 and re.sub("\'s", "", first_words[0].lower()) == \
+                            re.sub("\'s", "", first_words[1].lower()):
+                        defi = " ".join([first_words[1]] + defi_words[1:])
                     if line[0].strip() not in self.lexicon_list:
                         self.lexicon[word] = defi.strip()
                         self.lexicon_list[word] = []

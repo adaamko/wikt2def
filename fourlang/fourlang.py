@@ -73,6 +73,7 @@ class FourLang():
         s = s.replace('$', '_dollars')
         s = s.replace('%', '_percent')
         s = s.replace('|', ' ')
+        s = s.replace('*', ' ')
         if s == '#':
             s = '_number'
         keywords = ("graph", "node", "strict", "edge")

@@ -1,5 +1,6 @@
 import pandas as pd
 from graphviz import Source
+import numpy as np
 
 
 def read_output(file_path, threshold=1.0, what_to_write="FP"):
@@ -44,3 +45,9 @@ def compare_graphs(graph_premise, graph_hypothesis):
     dot_graph_premise = graph_premise.to_dot(marked_nodes)
     dot_graph_hypothesis = graph_hypothesis.to_dot(marked_nodes)
     return Source(dot_graph_premise), Source(dot_graph_hypothesis)
+
+
+"""for i in np.arange(0, 1.05, 0.05):
+    print("Threshold: {}".format(i))
+    read_output("nodes_2_sherliic.txt", threshold=i, what_to_write="")"""
+read_output("nodes_2_sherliic.txt", threshold=0.5, what_to_write="FP")
