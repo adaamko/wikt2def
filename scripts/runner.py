@@ -17,8 +17,8 @@ with open("nodes_2_sherliic.txt", "w") as f:
         premise = data_frame.premise[index]
         hypothesis = data_frame.hypothesis[index]
         score = data_frame.score[index]
-        graph_premise = text_to_4lang.process_deps(premise, method="expand", depth=2, blacklist=["in", "on", "of"])
-        graph_hypothesis = text_to_4lang.process_deps(hypothesis, method="expand", depth=1, blacklist=["in", "on", "of"])
+        graph_premise = text_to_4lang.process_deps(premise, method="expand", depth=2, blacklist=["in", "on", "of"], black_or_white="black")
+        graph_hypothesis = text_to_4lang.process_deps(hypothesis, method="expand", depth=1, blacklist=["in", "on", "of"], black_or_white="black")
         pred = similarity.asim_jac_edges(graph_premise, graph_hypothesis)
 
         Source(graph_premise.to_dot()).render('nodes_2_sherliic/{}_{}_premise.gv'.format(

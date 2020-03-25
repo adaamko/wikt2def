@@ -388,6 +388,7 @@ class Similarity(object):
             return 0
         else:
             return float(len(sim)) / len(hyp)
+
     def asim_jac_nodes_graded(self, graph_premise, graph_hypothesis):
         """
         Asymmetric Jaccard similarity between the nodes of the definition graphs
@@ -442,10 +443,10 @@ class Similarity(object):
                         for edge_type in output_node[1].items():
                             if edge_type[1]["color"]:
                                 inner_delete_list.append(edge_type[0])
-                        if len(output_node[1]) < 1:
-                            delete_list.append(output_node[0])
                         for inner_del in inner_delete_list:
                             del output_node[1]._atlas[inner_del]
+                        if len(output_node[1]) < 1:
+                            delete_list.append(output_node[0])
                     for to_del in delete_list:
                         del edge[1]._atlas[to_del]
                 try:
