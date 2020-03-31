@@ -205,7 +205,7 @@ class Lexicon:
                                 self.substituted[node] = def_graph
 
         self.substitute(graph, dep_to_4lang, parser_wrapper,
-                    depth-1, blacklist, filt)
+                    depth-1, blacklist, filt, black_or_white)
 
     def expand(self, graph, dep_to_4lang, parser_wrapper, depth=1, blacklist=[], filt=True, black_or_white="white"):
         if depth == 0:
@@ -251,7 +251,7 @@ class Lexicon:
                                 self.expanded[node] = def_graph
 
         self.expand(graph, dep_to_4lang, parser_wrapper,
-                    depth-1, blacklist, filt)
+                    depth-1, blacklist, filt, black_or_white)
 
     def expand_with_every_def(self, graph, dep_to_4lang, parser_wrapper, depth=1, blacklist=[], filt=True, black_or_white="white"):
         if depth <= 0:
