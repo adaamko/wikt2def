@@ -127,6 +127,8 @@ rcmod	-,-
 ref	-,-
 tmod	-,-	AT
 vmod	?,?
+partmod	-,2
+infmod	-,2
 xsubj	1,-
 prep_above	-,-
 prep_across	-,-

@@ -100,34 +100,75 @@ class Lexicon:
                 if len(line[2].strip().strip("\n")) > 5:
                     word = line[0].strip()
                     defi = line[2].strip().strip("\n")
-                    defi = re.sub(re.escape("#"), " ",  defi)
-                    defi = re.sub("transitive", "",  defi)
-                    defi = re.sub("intransitive", "",  defi)
+                    defi = re.sub(re.escape("#"), " ",  defi).strip()
+                    defi = re.sub(r"^intransitive", "",  defi)
+                    defi = re.sub(r"^ditransitive", "",  defi)
+                    defi = re.sub(r"^ambitransitive", "",  defi)
+                    defi = re.sub(r"^transitive", "",  defi)
+                    defi = re.sub(r"^uncountable", "",  defi)
+                    defi = re.sub(r"^countable", "",  defi)
+                    defi = re.sub(r"^pulative ", "",  defi)
+                    defi = re.sub(r"^\. ", "",  defi)
+                    defi_words = defi.split(" ")
+                    first_words = defi_words[0].split(',')
+                    if len(first_words) > 1 and re.sub("\'s", "", first_words[0].lower()) == \
+                            re.sub("\'s", "", first_words[1].lower()):
+                        defi = " ".join([first_words[1]] + defi_words[1:])
                     if line[0].strip() not in self.lexicon_list:
                         self.lexicon[word] = defi.strip()
                         self.lexicon_list[word] = []
                     if defi.strip() != word:
                         self.lexicon_list[word].append(defi.strip())
 
-    def substitute(self, graph, dep_to_4lang, parser_wrapper, depth=1, blacklist=[], filt=True):
+    def whitelisting(self, graph):
+        whitelist = [graph.root]
+        zero_graph = copy.deepcopy(graph)
+        delete_list = []
+        for edge in zero_graph.G.adj.items():
+            for output_node in edge[1].items():
+                inner_delete_list = []
+                for edge_type in output_node[1].items():
+                    if edge_type[1]["color"]:
+                        inner_delete_list.append(edge_type[0])
+                for inner_del in inner_delete_list:
+                    del output_node[1]._atlas[inner_del]
+                if len(output_node[1]) < 1:
+                    delete_list.append(output_node[0])
+            for to_del in delete_list:
+                if to_del in edge[1]._atlas:
+                    del edge[1]._atlas[to_del]
+
+        for node in zero_graph.G.nodes():
+            if algorithms.has_path(zero_graph.G, graph.root, node):
+                whitelist.append(node)
+        return whitelist
+
+    def blacklisting(self, graph):
+        one_two_blacklist = ["A", "a", "b", "B"]
+        for adj in graph.G._adj.values():
+            for a in adj.items():
+                if {'color': 2} in a[1].values():
+                    new_blacklist_item = a[0]
+                    for node in graph.G.nodes:
+                        if algorithms.has_path(graph.G, new_blacklist_item, node):
+                            blacklist_node = graph.d_clean(node)
+                            if blacklist_node != graph.root:
+                                one_two_blacklist.append(
+                                    blacklist_node.split('_')[0])
+                    new_blacklist_item = graph.d_clean(new_blacklist_item)
+                    if new_blacklist_item != graph.root:
+                        one_two_blacklist.append(
+                            new_blacklist_item.split('_')[0])
+        return one_two_blacklist
+
+    def substitute(self, graph, dep_to_4lang, parser_wrapper, depth=1, blacklist=[], filt=True, black_or_white="white"):
         if depth == 0:
             return
-        one_two_blacklist = ["A", "a", "b", "B"]
-        if filt:
-            for adj in graph.G._adj.values():
-                for a in adj.items():
-                    if {'color': 2} in a[1].values():
-                        new_blacklist_item = a[0]
-                        for node in graph.G.nodes:
-                            if algorithms.has_path(graph.G, new_blacklist_item, node):
-                                blacklist_node = graph.d_clean(node)
-                                if blacklist_node != graph.root:
-                                    one_two_blacklist.append(
-                                        blacklist_node.split('_')[0])
-                        new_blacklist_item = graph.d_clean(new_blacklist_item)
-                        if new_blacklist_item != graph.root:
-                            one_two_blacklist.append(
-                                new_blacklist_item.split('_')[0])
+
+        if black_or_white.lower() == "white":
+            whitelist = self.whitelisting(graph)
+        elif black_or_white.lower() == "black":
+            one_two_blacklist = self.blacklisting(graph)
 
         nodes = [node for node in graph.G.nodes(data=True)]
         for d_node, node_data in nodes:
@@ -139,7 +180,12 @@ class Lexicon:
                     node = node.capitalize()
                     if node not in self.lexicon:
                         node = node.lower()
-                if node not in self.stopwords and node in self.lexicon and node not in one_two_blacklist:
+                node_ok = not filt
+                if black_or_white.lower() == "white" and d_node in whitelist:
+                    node_ok = True
+                elif black_or_white.lower() == "black" and node not in one_two_blacklist:
+                    node_ok = True
+                if node not in self.stopwords and node in self.lexicon and node_ok:
                     if node in self.substituted:
                         def_graph = self.substituted[node]
                         graph.merge_definition_graph(def_graph, d_node, substitute=True)
@@ -161,25 +207,14 @@ class Lexicon:
         self.substitute(graph, dep_to_4lang, parser_wrapper,
                     depth-1, blacklist, filt)
 
-    def expand(self, graph, dep_to_4lang, parser_wrapper, depth=1, blacklist=[], filt=True):
+    def expand(self, graph, dep_to_4lang, parser_wrapper, depth=1, blacklist=[], filt=True, black_or_white="white"):
         if depth == 0:
             return
-        one_two_blacklist = ["A", "a", "b", "B"]
-        if filt:
-            for adj in graph.G._adj.values():
-                for a in adj.items():
-                    if {'color': 2} in a[1].values():
-                        new_blacklist_item = a[0]
-                        for node in graph.G.nodes:
-                            if algorithms.has_path(graph.G, new_blacklist_item, node):
-                                blacklist_node = graph.d_clean(node)
-                                if blacklist_node != graph.root:
-                                    one_two_blacklist.append(
-                                        blacklist_node.split('_')[0])
-                        new_blacklist_item = graph.d_clean(new_blacklist_item)
-                        if new_blacklist_item != graph.root:
-                            one_two_blacklist.append(
-                                new_blacklist_item.split('_')[0])
+
+        if black_or_white.lower() == "white":
+            whitelist = self.whitelisting(graph)
+        elif black_or_white.lower() == "black":
+            one_two_blacklist = self.blacklisting(graph)
 
         nodes = [node for node in graph.G.nodes(data=True)]
         for d_node, node_data in nodes:
@@ -191,7 +226,12 @@ class Lexicon:
                     node = node.capitalize()
                     if node not in self.lexicon:
                         node = node.lower()
-                if node not in self.stopwords and node in self.lexicon and node not in one_two_blacklist:
+                node_ok = not filt
+                if black_or_white.lower() == "white" and d_node in whitelist:
+                    node_ok = True
+                elif black_or_white.lower() == "black" and node not in one_two_blacklist:
+                    node_ok = True
+                if node not in self.stopwords and node in self.lexicon and node_ok:
                     if node in self.expanded:
                         def_graph = self.expanded[node]
                         graph.merge_definition_graph(def_graph, d_node)
@@ -213,14 +253,14 @@ class Lexicon:
         self.expand(graph, dep_to_4lang, parser_wrapper,
                     depth-1, blacklist, filt)
 
-    def expand_with_every_def(self, graph, dep_to_4lang, parser_wrapper, depth=1, blacklist=[]):
+    def expand_with_every_def(self, graph, dep_to_4lang, parser_wrapper, depth=1, blacklist=[], filt=True, black_or_white="white"):
         if depth <= 0:
             raise ValueError("Cannot expand with depth {}".format(depth))
         nodes = [node for node in graph.G.nodes(data=True)]
         if len(nodes) > 1:
             logging.debug(
                 "The graph is too big for multi-definition expansion.\nSimple expand used instead.")
-            self.expand(graph, dep_to_4lang, parser_wrapper, depth)
+            self.expand(graph, dep_to_4lang, parser_wrapper, depth=depth, filt=filt, black_or_white=black_or_white)
 
         graphs = []
         d_node, node_data = nodes[0]
@@ -244,6 +284,6 @@ class Lexicon:
                     graphs.append(current_graph)
 
         for i in range(len(graphs)):
-            self.expand(graphs[i], dep_to_4lang, parser_wrapper, depth-1)
+            self.expand(graphs[i], dep_to_4lang, parser_wrapper, depth=depth-1, filt=filt, black_or_white=black_or_white)
 
         return graphs

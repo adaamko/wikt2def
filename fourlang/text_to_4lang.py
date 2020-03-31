@@ -38,7 +38,7 @@ class TextTo4lang():
         t = t.strip()
         return t
 
-    def process_deps(self, deps,  method="default", depth=1, blacklist=[], filt=True, multi_definition=False):
+    def process_deps(self, deps,  method="default", depth=1, blacklist=[], filt=True, multi_definition=False, black_or_white="white"):
         corefs = []
         if "root" not in [d[0] for d in deps[0]]:
             unique, counts = np.unique(np.array([d[1] for d in deps[0]]), axis=0, return_counts=True)
@@ -49,17 +49,18 @@ class TextTo4lang():
 
         if method == "expand":
             if multi_definition:
-                return self.lexicon.expand_with_every_def(graph, self.dep_to_4lang, self.parser_wrapper, depth=depth)
+                return self.lexicon.expand_with_every_def(graph, self.dep_to_4lang, self.parser_wrapper, depth=depth,
+                                                          blacklist=blacklist, filt=filt, black_or_white=black_or_white)
             else:
                 self.lexicon.expand(graph, self.dep_to_4lang, self.parser_wrapper,
-                                    depth=depth, blacklist=blacklist, filt=filt)
+                                    depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white)
         elif method == "substitute":
             self.lexicon.substitute(graph, self.dep_to_4lang, self.parser_wrapper,
-                                    depth=depth, blacklist=blacklist, filt=filt)
+                                    depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white)
 
         return graph
 
-    def process_text(self, text, method="default", depth=1, blacklist=[], filt=True, multi_definition=False):
+    def process_text(self, text, method="default", depth=1, blacklist=[], filt=True, multi_definition=False, black_or_white="white"):
         logging.info("parsing text...")
         preproc_sens = []
         preproc_line = self.preprocess_text(str(text).strip())
@@ -73,13 +74,14 @@ class TextTo4lang():
 
         if method == "expand":
             if multi_definition:
-                return self.lexicon.expand_with_every_def(graph, self.dep_to_4lang, self.parser_wrapper, depth=depth)
+                return self.lexicon.expand_with_every_def(graph, self.dep_to_4lang, self.parser_wrapper, depth=depth,
+                                                          blacklist=blacklist, filt=filt, black_or_white=black_or_white)
             else:
                 self.lexicon.expand(graph, self.dep_to_4lang, self.parser_wrapper,
-                                    depth=depth, blacklist=blacklist, filt=filt)
+                                    depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white)
         elif method == "substitute":
             self.lexicon.substitute(
-                graph, self.dep_to_4lang, self.parser_wrapper, depth=depth, blacklist=blacklist, filt=filt)
+                graph, self.dep_to_4lang, self.parser_wrapper, depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white)
 
         return graph
 
