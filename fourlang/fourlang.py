@@ -58,6 +58,8 @@ class FourLang():
         #graph.G = nx.relabel_nodes(graph.G, {graph_root: self.root})
         if substitute:
             self.G = nx.relabel_nodes(self.G, {node: graph_root})
+            if node == self.root:
+                self.root = graph_root                
             attrs = {graph_root: {'expanded': True}}
         else:
             self.G.add_edge(node, graph_root, color=0)
