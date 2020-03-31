@@ -165,6 +165,7 @@ class Lexicon:
         if depth == 0:
             return
 
+        static_blacklist = ["a", "A", "b", "B"]
         if black_or_white.lower() == "white":
             whitelist = self.whitelisting(graph)
         elif black_or_white.lower() == "black":
@@ -185,7 +186,7 @@ class Lexicon:
                     node_ok = True
                 elif black_or_white.lower() == "black" and node not in one_two_blacklist:
                     node_ok = True
-                if node not in self.stopwords and node in self.lexicon and node_ok:
+                if node not in self.stopwords and node in self.lexicon and node_ok and node not in static_blacklist:
                     if node in self.substituted:
                         def_graph = self.substituted[node]
                         graph.merge_definition_graph(def_graph, d_node, substitute=True)
@@ -211,6 +212,8 @@ class Lexicon:
         if depth == 0:
             return
 
+        static_blacklist = ["a", "A", "b", "B"]
+
         if black_or_white.lower() == "white":
             whitelist = self.whitelisting(graph)
         elif black_or_white.lower() == "black":
@@ -231,7 +234,7 @@ class Lexicon:
                     node_ok = True
                 elif black_or_white.lower() == "black" and node not in one_two_blacklist:
                     node_ok = True
-                if node not in self.stopwords and node in self.lexicon and node_ok:
+                if node not in self.stopwords and node in self.lexicon and node_ok and node not in static_blacklist:
                     if node in self.expanded:
                         def_graph = self.expanded[node]
                         graph.merge_definition_graph(def_graph, d_node)
