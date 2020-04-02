@@ -60,7 +60,7 @@ class FourLang():
             self.G = nx.relabel_nodes(self.G, {node: graph_root})
             if node == self.root:
                 self.root = graph_root                
-            attrs = {graph_root: {'expanded': True}}
+            attrs = {graph_root: {'substituted': True}}
         else:
             self.G.add_edge(node, graph_root, color=0)
             attrs = {node: {'expanded': True}}
@@ -120,6 +120,10 @@ class FourLang():
                         style=filled, fillcolor=purple];'.format(
                     d_node, printname).replace('-', '_')
             elif 'expanded' in n_data and n_data['expanded']:
+                node_line = u'\t{0} [shape = circle, label = "{1}", \
+                        style="filled"];'.format(
+                    d_node, printname).replace('-', '_')
+            elif 'substituted' in n_data and n_data['substituted']:
                 node_line = u'\t{0} [shape = circle, label = "{1}", \
                         style="filled"];'.format(
                     d_node, printname).replace('-', '_')

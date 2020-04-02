@@ -141,6 +141,7 @@ class Lexicon:
         for node in zero_graph.G.nodes():
             if algorithms.has_path(zero_graph.G, graph.root, node):
                 whitelist.append(node)
+        whitelist.append(graph.root)
         return whitelist
 
     def blacklisting(self, graph):
