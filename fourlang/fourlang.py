@@ -16,7 +16,7 @@ class FourLang():
     dep_regex = re.compile("([a-z_-]*)\((.*?)-([0-9]*)'*, (.*?)-([0-9]*)'*\)")
 
     def __init__(self):
-        self.G=nx.MultiDiGraph()
+        self.G = nx.MultiDiGraph()
         self.root = None
 
     def add_node(self, concept):
@@ -28,7 +28,8 @@ class FourLang():
         self.G.add_node(concept.unique_name())
 
     def connect_edges(self, concept1, concept2, label):
-        self.G.add_edge(concept1.unique_name(), concept2.unique_name(), color=label)
+        self.G.add_edge(concept1.unique_name(),
+                        concept2.unique_name(), color=label)
 
     def get_graph(self):
         return self.G
@@ -41,7 +42,7 @@ class FourLang():
             cl = self.d_clean(node)
             if condition == cl.split("_")[0]:
                 cond_nodes.append(node)
-        
+
         for cond_node in cond_nodes:
             for node in nodes:
                 if cond_node in self.G and node in self.G:
@@ -52,11 +53,17 @@ class FourLang():
             if node in self.G.nodes(default=None):
                 self.G.remove_node(node)
 
-    def merge_definition_graph(self, graph, node):
+    def merge_definition_graph(self, graph, node, substitute=False):
         graph_root = graph.root
-        attrs = {node: {'expanded': True}}
         #graph.G = nx.relabel_nodes(graph.G, {graph_root: self.root})
-        self.G.add_edge(node, graph_root, color=0)
+        if substitute:
+            self.G = nx.relabel_nodes(self.G, {node: graph_root})
+            if node == self.root:
+                self.root = graph_root                
+            attrs = {graph_root: {'substituted': True}}
+        else:
+            self.G.add_edge(node, graph_root, color=0)
+            attrs = {node: {'expanded': True}}
         F = nx.compose(self.G, graph.G)
         self.G = F
         nx.set_node_attributes(self.G, attrs)
@@ -68,6 +75,7 @@ class FourLang():
         s = s.replace('$', '_dollars')
         s = s.replace('%', '_percent')
         s = s.replace('|', ' ')
+        s = s.replace('*', ' ')
         if s == '#':
             s = '_number'
         keywords = ("graph", "node", "strict", "edge")
@@ -86,7 +94,8 @@ class FourLang():
                 d_node1 = self.d_clean(u)
                 d_node2 = self.d_clean(v)
 
-                lines.append((self.d_clean(d_node1).split("_")[0], self.d_clean(d_node2).split("_")[0], edata['color']))
+                lines.append((self.d_clean(d_node1).split("_")[0], self.d_clean(
+                    d_node2).split("_")[0], edata['color']))
         return lines
 
     def get_nodes(self):
@@ -111,6 +120,10 @@ class FourLang():
                         style=filled, fillcolor=purple];'.format(
                     d_node, printname).replace('-', '_')
             elif 'expanded' in n_data and n_data['expanded']:
+                node_line = u'\t{0} [shape = circle, label = "{1}", \
+                        style="filled"];'.format(
+                    d_node, printname).replace('-', '_')
+            elif 'substituted' in n_data and n_data['substituted']:
                 node_line = u'\t{0} [shape = circle, label = "{1}", \
                         style="filled"];'.format(
                     d_node, printname).replace('-', '_')

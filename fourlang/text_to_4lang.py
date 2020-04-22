@@ -4,6 +4,7 @@ import os
 import re
 import sys
 import argparse
+import numpy as np
 
 from .dep_to_4lang import DepTo4lang
 from .stanford_wrapper import StanfordParser
@@ -13,9 +14,10 @@ from networkx.readwrite import json_graph
 __LOGLEVEL__ = 'INFO'
 __MACHINE_LOGLEVEL__ = 'INFO'
 
+
 class TextTo4lang():
     square_regex = re.compile("\[.*?\]")
-    
+
     def __init__(self, lang, port=5005):
         self.parser_wrapper = StanfordParser(port=port)
         self.dep_to_4lang = DepTo4lang()
@@ -26,6 +28,7 @@ class TextTo4lang():
             return self.lexicon.lexicon[word]
         else:
             return None
+
     def preprocess_text(self, text):
         t = text.strip()
         t = TextTo4lang.square_regex.sub('', t)
@@ -35,21 +38,29 @@ class TextTo4lang():
         t = t.strip()
         return t
 
-    def process_deps(self, deps, expand=False, depth=1, blacklist=[], filt=True, multi_definition=False):
+    def process_deps(self, deps,  method="default", depth=1, blacklist=[], filt=True, multi_definition=False, black_or_white="white"):
         corefs = []
+        if "root" not in [d[0] for d in deps[0]]:
+            unique, counts = np.unique(np.array([d[1] for d in deps[0]]), axis=0, return_counts=True)
+            index = np.argmax(counts)
+            deps[0].append(["root", ["ROOT", -1], unique[index].tolist()])
         graph = self.dep_to_4lang.get_machines_from_deps_and_corefs(
-                deps, corefs)
-        
-        if expand:
+            deps, corefs)
+
+        if method == "expand":
             if multi_definition:
-                return self.lexicon.expand_with_every_def(graph, self.dep_to_4lang, self.parser_wrapper, depth=depth)
+                return self.lexicon.expand_with_every_def(graph, self.dep_to_4lang, self.parser_wrapper, depth=depth,
+                                                          blacklist=blacklist, filt=filt, black_or_white=black_or_white)
             else:
-                self.lexicon.expand(graph, self.dep_to_4lang, self.parser_wrapper, depth=depth, blacklist=blacklist, filt=filt)
+                self.lexicon.expand(graph, self.dep_to_4lang, self.parser_wrapper,
+                                    depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white)
+        elif method == "substitute":
+            self.lexicon.substitute(graph, self.dep_to_4lang, self.parser_wrapper,
+                                    depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white)
 
         return graph
 
-
-    def process_text(self, text, expand=False, depth=1, blacklist=[], filt=True, multi_definition=False):
+    def process_text(self, text, method="default", depth=1, blacklist=[], filt=True, multi_definition=False, black_or_white="white"):
         logging.info("parsing text...")
         preproc_sens = []
         preproc_line = self.preprocess_text(str(text).strip())
@@ -59,13 +70,18 @@ class TextTo4lang():
         corefs = parse[1]
 
         graph = self.dep_to_4lang.get_machines_from_deps_and_corefs(
-                deps, corefs)
+            deps, corefs)
 
-        if expand:
+        if method == "expand":
             if multi_definition:
-                return self.lexicon.expand_with_every_def(graph, self.dep_to_4lang, self.parser_wrapper, depth=depth)
+                return self.lexicon.expand_with_every_def(graph, self.dep_to_4lang, self.parser_wrapper, depth=depth,
+                                                          blacklist=blacklist, filt=filt, black_or_white=black_or_white)
             else:
-                self.lexicon.expand(graph, self.dep_to_4lang, self.parser_wrapper, depth=depth, blacklist=blacklist, filt=filt)
+                self.lexicon.expand(graph, self.dep_to_4lang, self.parser_wrapper,
+                                    depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white)
+        elif method == "substitute":
+            self.lexicon.substitute(
+                graph, self.dep_to_4lang, self.parser_wrapper, depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white)
 
         return graph
 
@@ -74,7 +90,8 @@ class TextTo4lang():
         if not os.path.exists(fn):
             logging.info('file not exists: {0}, not parsing'.format(fn))
         elif not os.path.exists(out_fn):
-            logging.info('out directory not exists: {0}, not parsing'.format(out_fn))
+            logging.info(
+                'out directory not exists: {0}, not parsing'.format(out_fn))
         else:
             deps_fn = self.parse_file(fn, out_fn)
             graphs = self.process_deps_complex(deps_fn)
@@ -101,7 +118,7 @@ class TextTo4lang():
                 "deps": deps,
                 "corefs": corefs})))
         logging.info("parsed {0} sentences".format(len(deps)))
-    
+
         return deps_fn
 
     def process_deps_complex(self, fn):
@@ -113,10 +130,11 @@ class TextTo4lang():
             graph = self.dep_to_4lang.get_machines_from_deps_and_corefs(
                 deps, corefs)
             self.dep_to_4lang.lexicon.expand(graph)
-            
+
             sen_graphs.append(graph)
 
         return sen_graphs
+
 
 def main(input_file, output_dir):
     logging.basicConfig(
@@ -126,10 +144,13 @@ def main(input_file, output_dir):
     text_to_4lang = TextTo4lang()
     graphs = text_to_4lang.process_file(input_file, output_dir)
 
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description = "")
-    parser.add_argument("-i", "--inputfile", required=True, nargs="+", help="the file to process")
-    parser.add_argument("-o", "--outputdir", required=True, nargs="+", help="the output directory to write the graphs")
+    parser = argparse.ArgumentParser(description="")
+    parser.add_argument("-i", "--inputfile", required=True,
+                        nargs="+", help="the file to process")
+    parser.add_argument("-o", "--outputdir", required=True,
+                        nargs="+", help="the output directory to write the graphs")
 
     args = parser.parse_args()
     main(args.inputfile[0], args.outputdir[0])
