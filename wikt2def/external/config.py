@@ -258,6 +258,7 @@ class EnglishParser(DefaultParserConfig):
         self._beg_re = None
         self._com_re = None
         self._lan_spec = None
+        self._list_re = None
         super(EnglishParser, self).__init__(wikt_cfg, parser_cfg)
 
     @property
@@ -294,6 +295,12 @@ class EnglishParser(DefaultParserConfig):
         if not self._com_re:
             self._com_re =  re.compile(r'\{\{[^}]*\}\}')
         return self._com_re
+
+    @property
+    def list_re(self):
+        if not self._list_re:
+            self._list_re =  re.compile(r'\[\[[^]]*\]\]')
+        return self._list_re
 
 class ItalianParser(DefaultParserConfig):
 

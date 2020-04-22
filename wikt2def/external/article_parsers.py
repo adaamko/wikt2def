@@ -144,11 +144,20 @@ class DefaultArticleParser(ArticleParser):
                 com_match = self.cfg.com_re.findall(definition)
                 if com_match:
                     for c_m in com_match:
-                        if self.cfg.wc == "it":
+                        if self.cfg.wc == "it" or self.cfg.wc == "en":
                             definition = re.sub(re.escape(c_m), "", definition)
                         else:
                             definition = re.sub(re.escape(c_m), re.escape(c_m.split("|")[-1].strip("}")), definition)
                     if len(definition) > 1:
+                        if self.cfg.wc == "en":
+                            list_match = self.cfg.list_re.findall(definition)
+                            if list_match:
+                                for l_m in list_match:
+                                    l_m_replace = l_m.strip("[").strip("]").split("|")[-1]
+                                    if '\\' in l_m_replace or "//" in l_m_replace:
+                                        print(definition)
+                                    else:
+                                        definition = re.sub(re.escape(l_m), l_m_replace, definition)
                         definitions.append((title, group, self.trim_translation(definition)))
                 else:
                     split_def = definition.split(beg_match.group())
