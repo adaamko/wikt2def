@@ -22,7 +22,7 @@ def load_vec(emb_path, nmax=50000):
 
 
 def read(lang1, lang2=None, graded=True):
-    filename = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../SemEval2020-Task2-Dev")
+    filename = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../SemEval2020-Task2-Dev")
     language_name = ""
     if lang2 is None:
         filename = os.path.join(filename, "monolingual")
