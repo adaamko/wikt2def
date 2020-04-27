@@ -67,4 +67,4 @@ The repository also contains the code needed to build fourlang graph from raw te
     -t TYPE  --type choose between binary or graded
    ```
    
-   The result will be placed under the ```output.txt`` file.
+   The result will be placed under the ```output.txt``` file.
