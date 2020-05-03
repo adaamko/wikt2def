@@ -2,6 +2,7 @@ import os
 import networkx as nx
 from nltk.corpus import stopwords as nltk_stopwords
 from networkx import algorithms
+from nltk.corpus import wordnet as wn
 import re
 import logging
 import copy
@@ -78,6 +79,7 @@ class Lexicon:
 
     def __init__(self, lang):
         self.lexicon = {}
+        self.synset_lexicon = {}
         self.lexicon_list = {}
         self.lang_map = {}
         base_fn = os.path.dirname(os.path.abspath(__file__))
@@ -99,6 +101,18 @@ class Lexicon:
                 line = line.split("\t")
                 if len(line[2].strip().strip("\n")) > 5:
                     word = line[0].strip()
+                    synsets = wn.synsets(word)
+                    lemmas = []
+                    for i in synsets:
+                        lemmas += i.lemmas()
+                    synonyms = [lemma.name() for lemma in lemmas]
+                    unique_synonyms = []
+                    for syn in list(set(synonyms)):
+                        syn = syn.lower()
+                        if syn != word:
+                            unique_synonyms.append(syn)
+
+                    self.synset_lexicon[word] = unique_synonyms
                     defi = line[2].strip().strip("\n")
                     defi = self.parse_definition(defi)
                     if line[0].strip() not in self.lexicon_list:

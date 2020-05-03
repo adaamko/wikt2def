@@ -29,6 +29,12 @@ class TextTo4lang():
         else:
             return None
 
+    def get_synsets(self, word):
+        if word in self.lexicon.synset_lexicon:
+            return self.lexicon.synset_lexicon[word]
+        else:
+            return None
+
     def preprocess_text(self, text):
         t = text.strip()
         t = TextTo4lang.square_regex.sub('', t)
@@ -37,6 +43,21 @@ class TextTo4lang():
         t = t.replace(u"\xa0", u" ")
         t = t.strip()
         return t
+
+    def process_graph(self, graph, method="expand", depth=1, blacklist=[], filt=True, multi_definition=False, black_or_white="white"):
+        if method == "expand":
+            if multi_definition:
+                return self.lexicon.expand_with_every_def(graph, self.dep_to_4lang, self.parser_wrapper, depth=depth,
+                                                          blacklist=blacklist, filt=filt, black_or_white=black_or_white)
+            else:
+                self.lexicon.expand(graph, self.dep_to_4lang, self.parser_wrapper,
+                                    depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white)
+        elif method == "substitute":
+            self.lexicon.substitute(graph, self.dep_to_4lang, self.parser_wrapper,
+                                    depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white)
+
+        return graph
+
 
     def process_deps(self, deps,  method="default", depth=1, blacklist=[], filt=True, multi_definition=False, black_or_white="white"):
         corefs = []
