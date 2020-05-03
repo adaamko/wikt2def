@@ -100,25 +100,43 @@ class Lexicon:
                 if len(line[2].strip().strip("\n")) > 5:
                     word = line[0].strip()
                     defi = line[2].strip().strip("\n")
-                    defi = re.sub(re.escape("#"), " ",  defi).strip()
-                    defi = re.sub(r"^intransitive", "",  defi)
-                    defi = re.sub(r"^ditransitive", "",  defi)
-                    defi = re.sub(r"^ambitransitive", "",  defi)
-                    defi = re.sub(r"^transitive", "",  defi)
-                    defi = re.sub(r"^uncountable", "",  defi)
-                    defi = re.sub(r"^countable", "",  defi)
-                    defi = re.sub(r"^pulative ", "",  defi)
-                    defi = re.sub(r"^\. ", "",  defi)
-                    defi_words = defi.split(" ")
-                    first_words = defi_words[0].split(',')
-                    if len(first_words) > 1 and re.sub("\'s", "", first_words[0].lower()) == \
-                            re.sub("\'s", "", first_words[1].lower()):
-                        defi = " ".join([first_words[1]] + defi_words[1:])
+                    defi = self.parse_definition(defi)
                     if line[0].strip() not in self.lexicon_list:
                         self.lexicon[word] = defi.strip()
                         self.lexicon_list[word] = []
                     if defi.strip() != word:
                         self.lexicon_list[word].append(defi.strip())
+
+    def parse_definition(self, defi):
+        defi = re.sub(re.escape("#"), " ",  defi).strip()
+
+        defi = re.sub(r"^A type of", "",  defi)
+        defi = re.sub(r"^Something that", "",  defi)
+        defi = re.sub(r"^Relating to", "",  defi)
+        defi = re.sub(r"^Someone who", "",  defi)
+        defi = re.sub(r"^Of or", "",  defi)
+        defi = re.sub(r"^Any of", "",  defi)
+        defi = re.sub(r"^The act of", "",  defi)
+        defi = re.sub(r"^A group of", "",  defi)
+        defi = re.sub(r"^The part of", "",  defi)
+        defi = re.sub(r"^One of the", "",  defi)
+        defi = re.sub(r"^Used to", "",  defi)
+        defi = re.sub(r"^An attempt to", "",  defi)
+
+        defi = re.sub(r"^intransitive", "",  defi)
+        defi = re.sub(r"^ditransitive", "",  defi)
+        defi = re.sub(r"^ambitransitive", "",  defi)
+        defi = re.sub(r"^transitive", "",  defi)
+        defi = re.sub(r"^uncountable", "",  defi)
+        defi = re.sub(r"^countable", "",  defi)
+        defi = re.sub(r"^pulative ", "",  defi)
+        defi = re.sub(r"^\. ", "",  defi)
+        defi_words = defi.split(" ")
+        first_words = defi_words[0].split(',')
+        if len(first_words) > 1 and re.sub("\'s", "", first_words[0].lower()) == \
+                re.sub("\'s", "", first_words[1].lower()):
+            defi = " ".join([first_words[1]] + defi_words[1:])
+        return defi
 
     def whitelisting(self, graph):
         whitelist = [graph.root]
