@@ -162,5 +162,14 @@ class ArticleParser(object):
         text = text.replace("''", "")
         text = text.replace("<[^>]*>", "")
         return text.strip()
+    
+    
+    def extract_synonyms(self, title, text):
+        synonym = self.cfg.syn_re.findall(text)
+        synonym_words = []
+        for syn in synonym:
+            synonym_words += self.cfg.syn_word_re.findall(syn)
+        synonyms = [(title, syn) for syn in synonym_words]
+        return set(synonyms)
 
 

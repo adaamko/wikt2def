@@ -1,9 +1,13 @@
+import os
+
+
 class Wiktionary(object):
 
     def __init__(self, cfg):
         self.cfg = cfg
         self.init_parsers()
         self.triplets = list()
+        self.synonyms = list()
 
     def init_parsers(self):
         self.parsers = list()
@@ -11,6 +15,7 @@ class Wiktionary(object):
             self.parsers.append(parser_cl(self.cfg, parser_cfg))
 
     def parse_articles(self, write_immediately=False):
+        self.syn_file = open(os.path.join(os.path.dirname(self.cfg.output_path), "synonyms"), 'w')
         with open(self.cfg.output_path, 'w') as self.outf:
             i = 0
             for title, text in self.read_dump():
@@ -18,10 +23,15 @@ class Wiktionary(object):
                 #     break
                 i += 1
                 triplets = self.extract_definitions(title, text)
+                synonym = self.extract_synonyms(title, text)
+                if synonym:
+                    self.synonyms += synonym
                 if triplets:
                     self.store_translations(triplets)
-            if write_immediately is False:
+            if not write_immediately:
                 self.write_all_pairs()
+                for syn in self.synonyms:
+                    self.syn_file.write("{}\t{}\n".format(syn[0], syn[1]))
 
     def extract_translations(self, title, text):
         if self.skip_article(title, text):
@@ -46,6 +56,15 @@ class Wiktionary(object):
             for t in parser.extract_definitions(title, text):
                 triplets.append(t)
         return triplets
+
+    def extract_synonyms(self, title, text):
+        if self.skip_article(title, text):
+            return
+        pairs = list()
+        for parser in self.parsers:
+            for t in parser.extract_synonyms(title, text):
+                pairs.append(t)
+        return pairs
 
     def skip_article(self, title, text):
         if not title.strip() or not text.strip():
