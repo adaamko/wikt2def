@@ -15,3 +15,23 @@ optional arguments:
                         a list of languages
 ```
                         
+## Quick setup
+
+1) To reproduce our results, first start the servers respectively:
+   ```python
+   python fourlang/service/ud_service.py -l en -p 5005
+   python fourlang/service/ud_service.py -l de -p 5006
+   python fourlang/service/ud_service.py -l it -p 5007
+   ```
+   
+   Then run the script:
+      ```python
+   python process.py -c YOUR_CONFIG_FILE
+   ```
+   simple configs are provided in the _configs_ folder:
+   
+      ```python
+   python process.py -c configs/sherlic
+   ```
+   
+   The result will be placed under the ```output.txt``` file.
