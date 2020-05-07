@@ -81,11 +81,13 @@ class Lexicon:
     def __init__(self, lang):
         self.lexicon = {}
         self.synset_lexicon = defaultdict(lambda: defaultdict(list))
+        self.wiktionary_synonyms = defaultdict(list)
         self.lexicon_list = {}
         self.lang_map = {}
         base_fn = os.path.dirname(os.path.abspath(__file__))
         langnames_fn = os.path.join(base_fn, "langnames")
         definitions_fn = os.path.join(base_fn, "definitions/" + lang)
+        synonyms_fn = os.path.join(base_fn, "synonyms/" + lang)
         self.expanded = {}
         self.substituted = {}
 
@@ -96,6 +98,11 @@ class Lexicon:
 
         self.stopwords = set(nltk_stopwords.words(self.lang_map[lang]))
         self.lang = lang
+        
+        with open(synonyms_fn) as f:
+            for line in f:
+                line = line.split("\t")
+                self.wiktionary_synonyms[line[0].strip()].append(line[1].strip("\n"))
 
         with open(definitions_fn, "r") as f:
             for line in f:

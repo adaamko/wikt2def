@@ -309,7 +309,7 @@ class EnglishParser(DefaultParserConfig):
     @property
     def syn_re(self):
         if not self._syn_re:
-            self._syn_re = re.compile(r'====Synonyms====\n([* \{\}a-zA-Z|\n,;.]*)')
+            self._syn_re = re.compile(r'====Synonyms====\n([* \(\)\'\{\}a-zA-Z|\n,;.]*)')
         return self._syn_re
 
     @property
