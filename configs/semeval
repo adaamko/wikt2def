@@ -1,0 +1,8 @@
+[semeval]
+synonyms = wordnet
+filtering = black
+depth = 3
+threshold = 1.0
+language = en
+graded = binary
+votes = False
