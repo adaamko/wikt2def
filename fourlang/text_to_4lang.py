@@ -29,9 +29,9 @@ class TextTo4lang():
         else:
             return None
 
-    def get_synsets(self, word):
-        if word in self.lexicon.synset_lexicon:
-            return self.lexicon.synset_lexicon[word]
+    def get_synsets(self, word, pos="v"):
+        if word in self.lexicon.synset_lexicon and pos in self.lexicon.synset_lexicon[word]:
+            return self.lexicon.synset_lexicon[word][pos]
         else:
             return None
 
