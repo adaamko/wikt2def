@@ -103,7 +103,7 @@ class Lexicon:
                 line = line.split("\t")
                 if line[0] not in self.wiktionary_synonyms:
                     self.wiktionary_synonyms[line[0]] = []
-                self.wiktionary_synonyms[line[0]].append(line[1])
+                self.wiktionary_synonyms[line[0]].append(line[1].strip())
 
         with open(definitions_fn, "r") as f:
             for line in f:
