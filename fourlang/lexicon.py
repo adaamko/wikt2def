@@ -102,6 +102,8 @@ class Lexicon:
         with open(synonyms_fn) as f:
             for line in f:
                 line = line.split("\t")
+                if line[0] not in self.wiktionary_synonyms:
+                    self.wiktionary_synonyms[line[0]] = []
                 self.wiktionary_synonyms[line[0].strip()].append(line[1].strip("\n"))
 
         with open(definitions_fn, "r") as f:
