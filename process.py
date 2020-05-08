@@ -33,8 +33,10 @@ def main(config_path):
         language = config["semeval"]["language"]
         graded = config["semeval"]["graded"]
         votes = bool(config["semeval"]["votes"])
+        blacklist = config["semeval"]["blacklist"].split(",")
+        port = int(config["semeval"]["port"])
         semeval.run(synonyms, filtering, depth,
-                    threshold, language, graded, votes)
+                    threshold, language, graded, votes, blacklist, port)
 
 
 if __name__ == '__main__':

@@ -70,54 +70,28 @@ def connect_synsets(text_to_4lang, graph, synset_type):
         graph.connect_synsets(synsets)
 
 
-def process_fourlang_votes(text_to_4lang, language, data_frame, synonyms, filtering, depth, threshold):
+def process_fourlang_votes(text_to_4lang, language, data_frame, synonyms, filtering, depth, threshold, blacklist):
     fourlang_votes = []
     for i in tqdm(range(len(data_frame))):
         index = i
         premise = data_frame.premise[index]
         hypothesis = data_frame.hypothesis[index]
-        if language == "en":
-            graph_premise = text_to_4lang.process_text(premise, method="expand", depth=0, blacklist=[
-                "in", "on", "of"], black_or_white=filtering)
-            connect_synsets(text_to_4lang, graph_premise, synonyms)
+        graph_premise = text_to_4lang.process_text(premise, method="expand", depth=0, blacklist=blacklist, black_or_white=filtering)
+        connect_synsets(text_to_4lang, graph_premise, synonyms)
 
-            graph_premise = text_to_4lang.process_graph(graph_premise, method="expand", depth=depth, blacklist=[
-                "in", "on", "of"], black_or_white=filtering)
+        graph_premise = text_to_4lang.process_graph(graph_premise, method="expand", depth=depth, blacklist=blacklist, black_or_white=filtering)
 
-            graph_hypothesis = text_to_4lang.process_text(
-                hypothesis, method="expand", depth=1)
-            graph_premise.filter_graph("part")
-        elif language == "de":
-            graph_premise = text_to_4lang.process_text(
-                premise, method="expand", depth=0, blacklist=[
-                    "in", "auf"], black_or_white=filtering)  # legyen-e expand
-            connect_synsets(text_to_4lang, graph_premise, synonyms)
-
-            graph_premise = text_to_4lang.process_graph(
-                graph_premise, method="expand", depth=depth, blacklist=[
-                    "in", "auf"], black_or_white=filtering)
-
-            graph_hypothesis = text_to_4lang.process_text(
-                hypothesis, method="expand", depth=1)
-        elif language == "it":
-            graph_premise = text_to_4lang.process_text(
-                premise, method="expand", depth=0, blacklist=[
-                    "di", "su", "il"], black_or_white=filtering)
-            connect_synsets(text_to_4lang, graph_premise, synonyms)
-            graph_premise = text_to_4lang.process_graph(
-                graph_premise, method="expand", depth=depth, blacklist=[
-                    "di", "su", "il"], black_or_white=filtering)
-
-            graph_hypothesis = text_to_4lang.process_text(
-                hypothesis, method="expand", depth=1)
+        graph_hypothesis = text_to_4lang.process_text(hypothesis, method="expand", depth=1)
+        graph_premise.filter_graph("part")
         pred = asim_jac_nodes(graph_premise, graph_hypothesis)
         if pred >= threshold:
             fourlang_votes.append(1)
         else:
             fourlang_votes.append(0)
+    return fourlang_votes
 
 
-def process_de(data_frame):
+def process_de(data_frame, fourlang_votes):
     preds = []
     for j in tqdm(range(len(data_frame))):
         index = j
@@ -181,7 +155,7 @@ def process_de(data_frame):
     return preds
 
 
-def process(language, data_frame):
+def process(language, data_frame, fourlang_votes):
     preds = []
     for j in tqdm(range(len(data_frame))):
         index = j
@@ -218,9 +192,7 @@ def process(language, data_frame):
             hyp_syn_names = set([i.name() for i in hyp_syn_lemmas])
 
             hyp_syn_names_all += list(hyp_syn_names)
-
-        if (set(hyp_syn_names_all) & set(hyper_premise_names_all)
-            ) or fourlang_votes[index] == 1:
+        if (set(hyp_syn_names_all) & set(hyper_premise_names_all)) or fourlang_votes[index] == 1:
             preds.append(1)
         else:
             if score == 1:
@@ -229,25 +201,21 @@ def process(language, data_frame):
     return preds
 
 
-def run(synonyms, filtering, depth, threshold, language, data_type, votes):
+def run(synonyms, filtering, depth, threshold, language, data_type, votes, blacklist, port):
     graded = True if data_type == "graded" else False
     data_frame = read(language, graded=graded)
-    if language == "en":
-        text_to_4lang = TextTo4lang(lang="en", port=5005)
-    elif language == "de":
-        text_to_4lang = TextTo4lang(lang="de", port=5005)
-    elif language == "it":
-        text_to_4lang_it = TextTo4lang(lang="it", port=5007)
-    else:
+    supported_languages = ["en", "it", "de"]
+    if language not in supported_languages:
         raise Exception("Not supported language")
+    text_to_4lang = TextTo4lang(lang=language, port=port)
 
     fourlang_votes = process_fourlang_votes(
-        text_to_4lang, language, data_frame, synonyms, filtering, depth, threshold)
+        text_to_4lang, language, data_frame, synonyms, filtering, depth, threshold, blacklist)
     if votes:
         if language == "it" or language == "en":
-            preds = process(language, data_frame)
+            preds = process(language, data_frame, fourlang_votes)
         else:
-            preds = process_de(data_frame)
+            preds = process_de(data_frame, fourlang_votes)
     else:
         preds = fourlang_votes
 
