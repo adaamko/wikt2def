@@ -1,0 +1,10 @@
+[semeval]
+synonyms = wordnet
+filtering = black
+depth = 3
+blacklist = in,auf
+threshold = 1.0
+language = de
+graded = binary
+votes = False
+port = 5006

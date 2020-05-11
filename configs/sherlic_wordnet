@@ -1,4 +1,4 @@
 [sherlic]
-synonyms = none
+synonyms = wordnet
 depth = 2
 threshold = 0.1
