@@ -53,33 +53,42 @@ def asim_jac_edges(graph_premise, graph_hypothesis):
         return float(len(sim)) / len(hyp)
 
 
-def connect_synsets(text_to_4lang, graph, synset_type):
-    if synset_type == "wordnet":
-        synsets_v = text_to_4lang.get_synsets(graph.root.split("_")[0])
-        synsets_n = text_to_4lang.get_synsets(
+def connect_synsets(text_to_4lang, graph, synset_type, combine):
+    synsets_wordnet = []
+    synsets_v = text_to_4lang.get_synsets(graph.root.split("_")[0])
+    synsets_n = text_to_4lang.get_synsets(
             graph.root.split("_")[0], pos="n")
-        if synsets_v:
-            synsets_top = []
-            if len(synsets_v) > 5:
-                synsets_top = synsets_v[:5]
-            else:
-                synsets_top = synsets_v
-            graph.connect_synsets(synsets_top)
+    if synsets_v:
+        synsets_top = []
+        if len(synsets_v) > 5:
+            synsets_top = synsets_v[:5]
+        else:
+            synsets_top = synsets_v
+        synsets_wordnet += synsets_top
 
-        if synsets_n:
-            synsets_top = []
-            if len(synsets_n) > 5:
-                synsets_top = synsets_n[:5]
-            else:
-                synsets_top = synsets_n
-            graph.connect_synsets(synsets_top)
-    elif synset_type == "wiktionary":
-        synsets = text_to_4lang.lexicon.wiktionary_synonyms[graph.root.split("_")[
-            0]]
+    if synsets_n:
+        synsets_top = []
+        if len(synsets_n) > 5:
+            synsets_top = synsets_n[:5]
+        else:
+            synsets_top = synsets_n
+        synsets_wordnet += synsets_top
+
+    wiktionary_synsets = text_to_4lang.lexicon.wiktionary_synonyms[graph.root.split("_")[0]]
+
+    if synset_type == "wordnet" and combine == "SINGLE":
+        graph.connect_synsets(synsets_wordnet)
+    elif synset_type == "wiktionary" and combine == "SINGLE":
+        graph.connect_synsets(wiktionary_synsets)
+    elif combine == "OR":
+        synsets = list(set(synsets_wordnet).union(set(wiktionary_synsets)))
+        graph.connect_synsets(synsets)
+    elif combine == "AND":
+        synsets = list(set(synsets_wordnet).intersection(set(wiktionary_synsets)))
         graph.connect_synsets(synsets)
 
 
-def process(text_to_4lang, data_frame, synonyms, depth, threshold):
+def process(text_to_4lang, data_frame, synonyms, depth, threshold, combine):
     preds = []
     guesses = []
     for i in tqdm(range(len(data_frame))):
@@ -89,7 +98,7 @@ def process(text_to_4lang, data_frame, synonyms, depth, threshold):
         score = data_frame.score[index]
         graph_premise = text_to_4lang.process_deps(premise, method="expand", depth=0, blacklist=[
                                                    "in", "on", "of"], filt=False, black_or_white="")
-        connect_synsets(text_to_4lang, graph_premise, synonyms)
+        connect_synsets(text_to_4lang, graph_premise, synonyms, combine)
         graph_premise = text_to_4lang.process_graph(graph_premise, method="expand", depth=depth, blacklist=[
                                                     "in", "on", "of"], filt=False, black_or_white="")
 
@@ -105,7 +114,7 @@ def process(text_to_4lang, data_frame, synonyms, depth, threshold):
     return preds
 
 
-def run(synonyms, depth, threshold):
+def run(synonyms, depth, threshold, combine):
     text_to_4lang = TextTo4lang(lang="en")
     data = read_sherliic(
         "data/dev.csv", ud_path="data/relation_index.tsv", keep_context=True)
@@ -114,7 +123,7 @@ def run(synonyms, depth, threshold):
         data["premise"] + " " + data["prem_argright"]
     data['hyp_text'] = data["hypo_argleft"] + " " + \
         data["hypothesis"] + " " + data["hypo_argright"]
-    preds = process(text_to_4lang, data_frame, synonyms, depth, threshold)
+    preds = process(text_to_4lang, data_frame, synonyms, depth, threshold, combine)
 
     bPrecis, bRecall, bFscore, bSupport = pr(data_frame.score.tolist(), preds)
 

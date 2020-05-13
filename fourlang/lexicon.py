@@ -111,11 +111,23 @@ class Lexicon:
                 line = line.split("\t")
                 if len(line[2].strip().strip("\n")) > 5:
                     word = line[0].strip()
-                    synsets = wn.synsets(word)
+
+                    if lang == "it":
+                        synsets = wn.synsets(word, lang="ita")
+                    elif lang == "en":
+                        synsets = wn.synsets(word, lang="eng")
+                    elif lang == "de":
+                        synsets = []
+                    else:
+                        synsets = wn.synsets(word, lang=lang)
+                    
                     lemmas = []
                     for i in synsets:
                         if i.pos() not in self.synset_lexicon[word]:
-                            lemmas += i.lemmas()
+                            if lang == "it":
+                                lemmas += i.lemmas(lang="ita")
+                            else:
+                                lemmas += i.lemmas()
                             self.synset_lexicon[word][i.pos()] = list(set([lemma.name() for lemma in lemmas if lemma.name() != word]))
 
                     defi = line[2].strip().strip("\n")

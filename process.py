@@ -24,7 +24,8 @@ def main(config_path):
         synonyms = config["sherlic"]["synonyms"]
         depth = int(config["sherlic"]["depth"])
         threshold = float(config["sherlic"]["threshold"])
-        sherlic.run(synonyms, depth, threshold)
+        combine = config["sherlic"]["CombineSynonyms"]
+        sherlic.run(synonyms, depth, threshold, combine)
     elif "semeval" in config:
         synonyms = config["semeval"]["synonyms"]
         filtering = config["semeval"]["filtering"]
@@ -32,11 +33,13 @@ def main(config_path):
         threshold = float(config["semeval"]["threshold"])
         language = config["semeval"]["language"]
         graded = config["semeval"]["graded"]
-        votes = bool(config["semeval"]["votes"])
+        votes = config["semeval"]["votes"] == "True"
         blacklist = config["semeval"]["blacklist"].split(",")
         port = int(config["semeval"]["port"])
+        combine = config["semeval"]["CombineSynonyms"]
+
         semeval.run(synonyms, filtering, depth,
-                    threshold, language, graded, votes, blacklist, port)
+                    threshold, language, graded, votes, blacklist, port, combine)
 
 
 if __name__ == '__main__':
