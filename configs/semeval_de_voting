@@ -1,5 +1,5 @@
 [semeval]
-synonyms = wordnet
+synonyms = wiktionary
 filtering = black
 depth = 3
 blacklist = in,auf
@@ -8,3 +8,4 @@ language = de
 graded = binary
 votes = True
 port = 5006
+CombineSynonyms = SINGLE

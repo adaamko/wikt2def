@@ -1,5 +1,5 @@
 [sherlic]
-synonyms = none
+synonyms = wordnet
 depth = 2
 CombineSynonyms = SINGLE
 threshold = 0.1

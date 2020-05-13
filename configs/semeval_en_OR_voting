@@ -2,10 +2,10 @@
 synonyms = wiktionary
 filtering = black
 depth = 3
-blacklist = in,auf
+blacklist = on,of,in
 threshold = 1.0
-language = de
+language = en
 graded = binary
-votes = False
-port = 5006
-CombineSynonyms = SINGLE
+votes = True
+port = 5005
+CombineSynonyms = OR
