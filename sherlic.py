@@ -10,6 +10,7 @@ from graphviz import Source
 from networkx.readwrite import json_graph
 from nltk.corpus import wordnet as wn
 from sklearn.metrics import precision_recall_fscore_support as pr
+from sklearn.metrics import confusion_matrix as cm
 from tqdm import tqdm
 
 from fourlang.lexicon import Lexicon
@@ -114,10 +115,10 @@ def process(text_to_4lang, data_frame, synonyms, depth, threshold, combine):
     return preds
 
 
-def run(synonyms, depth, threshold, combine):
+def run(synonyms, depth, threshold, combine, dataset="dev"):
     text_to_4lang = TextTo4lang(lang="en")
     data = read_sherliic(
-        "data/dev.csv", ud_path="data/relation_index.tsv", keep_context=True)
+        "data/" + dataset  +".csv", ud_path="data/relation_index.tsv", keep_context=True)
     data_frame = build_graph(data)
     data['premise_text'] = data["prem_argleft"] + " " + \
         data["premise"] + " " + data["prem_argright"]
@@ -130,6 +131,13 @@ def run(synonyms, depth, threshold, combine):
     print("Precision: " + str(bPrecis[1]))
     print("Recall: " + str(bRecall[1]))
     print("Fscore: " + str(bFscore[1]))
+
+    tn, fp, fn, tp = cm(data_frame.score.tolist(), preds).ravel()
+    print("Scores")
+    print("TN: " + str(tn))
+    print("FP: " + str(fp))
+    print("FN: " + str(fn))
+    print("TP: " + str(tp))
 
     with open("sherlic_output.txt", "w+") as f:
         for i, pred in enumerate(preds):

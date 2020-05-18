@@ -128,7 +128,7 @@ class Lexicon:
                                 lemmas += i.lemmas(lang="ita")
                             else:
                                 lemmas += i.lemmas()
-                            self.synset_lexicon[word][i.pos()] = list(set([lemma.name() for lemma in lemmas if lemma.name() != word]))
+                            self.synset_lexicon[word][i.pos()] = [lemma.name() for lemma in lemmas if lemma.name() != word]
 
                     defi = line[2].strip().strip("\n")
                     defi = self.parse_definition(defi)

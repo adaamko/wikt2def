@@ -3,3 +3,4 @@ synonyms = wordnet
 depth = 2
 CombineSynonyms = AND
 threshold = 0.1
+dataset = test

@@ -25,7 +25,8 @@ def main(config_path):
         depth = int(config["sherlic"]["depth"])
         threshold = float(config["sherlic"]["threshold"])
         combine = config["sherlic"]["CombineSynonyms"]
-        sherlic.run(synonyms, depth, threshold, combine)
+        dataset = config["sherlic"]["dataset"]
+        sherlic.run(synonyms, depth, threshold, combine, dataset)
     elif "semeval" in config:
         synonyms = config["semeval"]["synonyms"]
         filtering = config["semeval"]["filtering"]
@@ -37,8 +38,11 @@ def main(config_path):
         blacklist = config["semeval"]["blacklist"].split(",")
         port = int(config["semeval"]["port"])
         combine = config["semeval"]["CombineSynonyms"]
-
-        semeval.run(synonyms, filtering, depth,
+        if "wordnet_only" in config["semeval"]:
+            semeval.run(synonyms, filtering, depth,
+                    threshold, language, graded, votes, blacklist, port, combine, True)
+        else:
+            semeval.run(synonyms, filtering, depth,
                     threshold, language, graded, votes, blacklist, port, combine)
 
 

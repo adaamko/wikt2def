@@ -8,6 +8,7 @@ from graphviz import Source
 from networkx.readwrite import json_graph
 from nltk.corpus import wordnet as wn
 from sklearn.metrics import precision_recall_fscore_support as pr
+from sklearn.metrics import confusion_matrix as cm
 from tqdm import tqdm
 
 from fourlang.lexicon import Lexicon
@@ -210,7 +211,7 @@ def process(language, data_frame, fourlang_votes):
     return preds
 
 
-def run(synonyms, filtering, depth, threshold, language, data_type, votes, blacklist, port, combine):
+def run(synonyms, filtering, depth, threshold, language, data_type, votes, blacklist, port, combine, wordnet_only = False):
     graded = True if data_type == "graded" else False
     data_frame = read(language, graded=graded)
     supported_languages = ["en", "it", "de"]
@@ -218,8 +219,11 @@ def run(synonyms, filtering, depth, threshold, language, data_type, votes, black
         raise Exception("Not supported language")
     text_to_4lang = TextTo4lang(lang=language, port=port)
 
-    fourlang_votes = process_fourlang_votes(
-        text_to_4lang, language, data_frame, synonyms, filtering, depth, threshold, blacklist, combine)
+    if not wordnet_only:
+        fourlang_votes = process_fourlang_votes(
+            text_to_4lang, language, data_frame, synonyms, filtering, depth, threshold, blacklist, combine)
+    else:
+        fourlang_votes = len(data_frame) * [0]
     if votes:
         if language == "it" or language == "en":
             preds = process(language, data_frame, fourlang_votes)
@@ -228,12 +232,34 @@ def run(synonyms, filtering, depth, threshold, language, data_type, votes, black
     else:
         preds = fourlang_votes
 
+    bPrecis, bRecall, bFscore, bSupport = pr(data_frame.score.tolist(), fourlang_votes)
+
+    print("4lang")
+    print("Precision: " + str(bPrecis[1]))
+    print("Recall: " + str(bRecall[1]))
+    print("Fscore: " + str(bFscore[1]))
+
+    tn, fp, fn, tp = cm(data_frame.score.tolist(), fourlang_votes).ravel()
+    print("Scores")
+    print("TN: " + str(tn))
+    print("FP: " + str(fp))
+    print("FN: " + str(fn))
+    print("TP: " + str(tp))
+
+   
     bPrecis, bRecall, bFscore, bSupport = pr(data_frame.score.tolist(), preds)
 
     print("Voting")
     print("Precision: " + str(bPrecis[1]))
     print("Recall: " + str(bRecall[1]))
     print("Fscore: " + str(bFscore[1]))
+
+    tn, fp, fn, tp = cm(data_frame.score.tolist(), preds).ravel()
+    print("Scores")
+    print("TN: " + str(tn))
+    print("FP: " + str(fp))
+    print("FN: " + str(fn))
+    print("TP: " + str(tp))
 
     with open("semeval_output.txt", "w+") as f:
         for i, pred in enumerate(preds):
