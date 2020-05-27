@@ -86,9 +86,9 @@ class Lexicon:
         self.lang_map = {}
         base_fn = os.path.dirname(os.path.abspath(__file__))
         langnames_fn = os.path.join(base_fn, "langnames")
-        definitions_fn = os.path.join(base_fn, "definitions/" + lang)
-        if os.path.exists("synonyms"):
-            synonyms_fn = os.path.join(base_fn, "synonyms/" + lang)
+        definitions_fn = os.path.join(base_fn, "definitions", lang)
+        if os.path.exists(os.path.join("synonyms", lang)):
+            synonyms_fn = os.path.join(base_fn, "synonyms", lang)
             with open(synonyms_fn) as f:
                 for line in f:
                     line = line.split("\t")
