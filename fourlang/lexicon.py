@@ -87,7 +87,15 @@ class Lexicon:
         base_fn = os.path.dirname(os.path.abspath(__file__))
         langnames_fn = os.path.join(base_fn, "langnames")
         definitions_fn = os.path.join(base_fn, "definitions/" + lang)
-        synonyms_fn = os.path.join(base_fn, "synonyms/" + lang)
+        if os.path.exists("synonyms"):
+            synonyms_fn = os.path.join(base_fn, "synonyms/" + lang)
+            with open(synonyms_fn) as f:
+            for line in f:
+                line = line.split("\t")
+                if line[0] not in self.wiktionary_synonyms:
+                    self.wiktionary_synonyms[line[0]] = []
+                self.wiktionary_synonyms[line[0].strip()].append(line[1].strip("\n"))
+        
         self.expanded = {}
         self.substituted = {}
 
@@ -98,13 +106,6 @@ class Lexicon:
 
         self.stopwords = set(nltk_stopwords.words(self.lang_map[lang]))
         self.lang = lang
-        
-        with open(synonyms_fn) as f:
-            for line in f:
-                line = line.split("\t")
-                if line[0] not in self.wiktionary_synonyms:
-                    self.wiktionary_synonyms[line[0]] = []
-                self.wiktionary_synonyms[line[0].strip()].append(line[1].strip("\n"))
 
         with open(definitions_fn, "r") as f:
             for line in f:
