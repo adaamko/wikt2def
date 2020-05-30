@@ -101,13 +101,13 @@ the union of `4lang+syn` and `WordNet`
 | always yes                    |                  33.3 |                    100 |                   49.9 | |
 | Berant II                     |                  77.4 |                   18.6 |                   30.0 | |
 | PPDB                          |                  62.1 |                   24.0 |                   34.7 | |
-| WordNet                       |                  38.8 |                   35.7 |                   37.2 | sherlic|
-| 4lang                         | <span>**80.4**</span> |                   22.6 |                   35.3 | sherlic_synonyms OR |
-| 4lang\_syn                    |                  70.0 |                   26.8 |                   38.7 |sherlic3 |
-| 4lang\_3exp                   |                 71.79 |                  25.35 |                  37.47 | sherlic3_synonyms OR|
-| 4lang\_3exp\_syn              |                 62.98 | <span>**30.98**</span> | <span>**41.53**</span> | |
-| all rules                     |                  39.7 |                   49.9 |                   44.2 | |
-| \+ WordNet                    |                  37.2 |                   62.6 |                   46.6 | |
+| WordNet                       |                  38.8 |                   35.7 |                   37.2 | results/results_WordNet_test.csv|
+| 4lang                         | <span>**80.4**</span> |                   22.6 |                   35.3 |sherlic |
+| 4lang\_syn                    |                  70.0 |                   26.8 |                   38.7 |sherlic_synonyms OR |
+| 4lang\_3exp                   |                 71.79 |                  25.35 |                  37.47 | sherlic3|
+| 4lang\_3exp\_syn              |                 62.98 | <span>**30.98**</span> | <span>**41.53**</span> |sherlic3_synonyms OR |
+| all rules                     |                  39.7 |                   49.9 |                   44.2 | results/all_rules.csv |
+| \+ WordNet                    |                  37.2 |                   62.6 |                   46.6 | results/wordnet_and_all_rules.csv |
 | \+ 4lang                      |                  42.2 |                   57.9 |                   48.8 | |
 | \+ 4lang\_syn                 |                  41.7 |                   59.6 |                   49.0 | |
 | \+ WordNet + 4lang            |                  38.7 |                   68.4 |                   49.5 | |
@@ -125,6 +125,6 @@ individual rule-based baselines. `ESIM`  is the strongest system
 evaluated that wasn’t tuned on SherLlic’s held-out portion and
 `w2v+tsg_rel_emb` is the overall strongest system.
 
-To reproduce the result of the original SherLIiC paper, please go to: https://github.com/mnschmit/SherLIiC
+To reproduce the result of the original SherLIiC paper, please go to: https://github.com/mnschmit/SherLIiC. We also provide precomputed results in the results directory.
 
 </div>
