@@ -1,0 +1,7 @@
+flask
+networkx
+stanfordnlp
+nltk
+graphviz
+sklearn
+pandas

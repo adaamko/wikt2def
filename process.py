@@ -26,7 +26,12 @@ def main(config_path):
         threshold = float(config["sherlic"]["threshold"])
         combine = config["sherlic"]["CombineSynonyms"]
         dataset = config["sherlic"]["dataset"]
-        sherlic.run(synonyms, depth, threshold, combine, dataset)
+
+        if "blacklist" in config["sherlic"]:
+            blacklist = config["sherlic"]["blacklist"].split(",")
+            sherlic.run(synonyms, depth, threshold, combine, dataset, blacklist)
+        else:
+            sherlic.run(synonyms, depth, threshold, combine, dataset)
     elif "semeval" in config:
         synonyms = config["semeval"]["synonyms"]
         filtering = config["semeval"]["filtering"]
