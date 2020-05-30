@@ -89,7 +89,7 @@ def connect_synsets(text_to_4lang, graph, synset_type, combine):
         graph.connect_synsets(synsets)
 
 
-def process(text_to_4lang, data_frame, synonyms, depth, threshold, combine):
+def process(text_to_4lang, data_frame, synonyms, depth, threshold, combine, blacklist):
     preds = []
     guesses = []
     for i in tqdm(range(len(data_frame))):
@@ -97,14 +97,11 @@ def process(text_to_4lang, data_frame, synonyms, depth, threshold, combine):
         premise = data_frame["premise"][index]
         hypothesis = data_frame["hypothesis"][index]
         score = data_frame.score[index]
-        graph_premise = text_to_4lang.process_deps(premise, method="expand", depth=0, blacklist=[
-                                                   "in", "on", "of"], filt=False, black_or_white="")
+        graph_premise = text_to_4lang.process_deps(premise, method="expand", depth=0, blacklist=blacklist, filt=False, black_or_white="")
         connect_synsets(text_to_4lang, graph_premise, synonyms, combine)
-        graph_premise = text_to_4lang.process_graph(graph_premise, method="expand", depth=depth, blacklist=[
-                                                    "in", "on", "of"], filt=False, black_or_white="")
+        graph_premise = text_to_4lang.process_graph(graph_premise, method="expand", depth=depth, blacklist=blacklist, filt=False, black_or_white="")
 
-        graph_hypothesis = text_to_4lang.process_deps(hypothesis, method="expand", depth=1, blacklist=[
-                                                      "in", "on", "of"], filt=False, black_or_white="")
+        graph_hypothesis = text_to_4lang.process_deps(hypothesis, method="expand", depth=1, blacklist=blacklist, filt=False, black_or_white="")
         pred = asim_jac_edges(graph_premise, graph_hypothesis)
         guesses.append(pred)
         if pred >= threshold:
@@ -115,7 +112,7 @@ def process(text_to_4lang, data_frame, synonyms, depth, threshold, combine):
     return preds
 
 
-def run(synonyms, depth, threshold, combine, dataset="dev"):
+def run(synonyms, depth, threshold, combine, dataset="dev", blacklist=["in","of","on"]):
     text_to_4lang = TextTo4lang(lang="en")
     data = read_sherliic(
         "data/" + dataset  +".csv", ud_path="data/relation_index.tsv", keep_context=True)
@@ -124,7 +121,7 @@ def run(synonyms, depth, threshold, combine, dataset="dev"):
         data["premise"] + " " + data["prem_argright"]
     data['hyp_text'] = data["hypo_argleft"] + " " + \
         data["hypothesis"] + " " + data["hypo_argright"]
-    preds = process(text_to_4lang, data_frame, synonyms, depth, threshold, combine)
+    preds = process(text_to_4lang, data_frame, synonyms, depth, threshold, combine, blacklist)
 
     bPrecis, bRecall, bFscore, bSupport = pr(data_frame.score.tolist(), preds)
 
