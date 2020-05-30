@@ -16,10 +16,8 @@ The repository also contains the code needed to build fourlang graph from raw te
 1. Create a python virtual environment
 
    1. Download [Anaconda](https://conda.io/miniconda.html)
-
-   1. Open Anaconda shell and go to the repository root directory
-
-   1. Execute the following command to create a virtual environment: `conda env create`
+   
+   1. Execute the following command to create a virtual environment: `conda create --name YOURENVNAME`
 
 1) Install python dependencies
 
