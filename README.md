@@ -91,3 +91,40 @@ Wiktionary. `WordNet` is the baseline using WordNet hypernyms, `all` is
 the union of `4lang+syn` and `WordNet`
 
 </div>
+
+ ### Sherlic
+ 
+<div id="table:sherlic_results">
+
+| <span>**Method** </span>      |    <span>**P**</span> |     <span>**R**</span> |     <span>**F**</span> | <span>**Config**</span> |
+| :---------------------------- | --------------------: | ---------------------: | ---------------------: | ---------------------:  |
+| always yes                    |                  33.3 |                    100 |                   49.9 | |
+| Berant II                     |                  77.4 |                   18.6 |                   30.0 | |
+| PPDB                          |                  62.1 |                   24.0 |                   34.7 | |
+| WordNet                       |                  38.8 |                   35.7 |                   37.2 | sherlic|
+| 4lang                         | <span>**80.4**</span> |                   22.6 |                   35.3 | sherlic_synonyms OR |
+| 4lang\_syn                    |                  70.0 |                   26.8 |                   38.7 |sherlic3 |
+| 4lang\_3exp                   |                 71.79 |                  25.35 |                  37.47 | sherlic3_synonyms OR|
+| 4lang\_3exp\_syn              |                 62.98 | <span>**30.98**</span> | <span>**41.53**</span> | |
+| all rules                     |                  39.7 |                   49.9 |                   44.2 | |
+| \+ WordNet                    |                  37.2 |                   62.6 |                   46.6 | |
+| \+ 4lang                      |                  42.2 |                   57.9 |                   48.8 | |
+| \+ 4lang\_syn                 |                  41.7 |                   59.6 |                   49.0 | |
+| \+ WordNet + 4lang            |                  38.7 |                   68.4 |                   49.5 | |
+| \+ WordNet + 4lang\_syn       |                  38.9 |                   69.6 |                   49.9 | |
+| \+ WordNet + 4lang\_3exp\_syn |                 38.83 |                  70.82 | <span>**50.16**</span> | |
+| ESIM                          |                  39.0 |  <span>**83.3**</span> |                   53.1 | |
+| w2v + tsg\_rel\_emb           |                  51.8 |                   72.7 |  <span>**60.5**</span> | |
+
+Performance on the SherLlic test set. `4lang` and `4lang_syn` is our
+method without and with additional synonym nodes from WordNet and
+Wiktionary. `WordNet` is the baseline using WordNet hypernyms, `all` is
+the union of `4lang+syns` and `WordNet`. `all rules` is the union of all
+rule-based baselines in , `Berant II`  and `PPDB`  are the two strongest
+individual rule-based baselines. `ESIM`  is the strongest system
+evaluated that wasn’t tuned on SherLlic’s held-out portion and
+`w2v+tsg_rel_emb` is the overall strongest system.
+
+To reproduce the result of the original SherLIiC paper, please go to: https://github.com/mnschmit/SherLIiC
+
+</div>
