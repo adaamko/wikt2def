@@ -6,6 +6,8 @@ This repository contains a tool for automatic extraction of wiktionary definitio
 
 The repository also contains the code needed to build fourlang graph from raw text. Fourlang grahps rely on the definitions extracted with the wikt2def tool. Currently we support three languages: *English, Italian, and German*.
 
+Also it contains code to reproduce our results on the lexical entailment task on two different dataset (Semeval 2020 and Sherlic). The further sections contain instructions to run our code.
+
 ## Requirements
 
 - Python 3.7
@@ -61,6 +63,7 @@ The repository also contains the code needed to build fourlang graph from raw te
  
  
  ## Reproduce our results
+ The **Config** column contains the specific config file to run our code with. Also in some cases it contains a specific file with the results (the ones ending with .csv)
  
  ### Semeval
  <div id="table:semeval_results">
@@ -126,3 +129,5 @@ evaluated that wasn’t tuned on SherLlic’s held-out portion and
 To reproduce the result of the original SherLIiC paper, please go to: https://github.com/mnschmit/SherLIiC. We also provide precomputed results in the results directory.
 
 </div>
+
+***Please note that as of now the code doesn't contain caching of the ud parses which may result in longer running time. We plan on optimizing it for further development.***
