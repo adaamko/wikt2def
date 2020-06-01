@@ -113,6 +113,7 @@ def process(text_to_4lang, data_frame, synonyms, depth, threshold, combine, blac
 
 
 def run(synonyms, depth, threshold, combine, dataset="dev", blacklist=["in","of","on"]):
+    print("Initializng modules...")
     text_to_4lang = TextTo4lang(lang="en")
     data = read_sherliic(
         "data/" + dataset  +".csv", ud_path="data/relation_index.tsv", keep_context=True)

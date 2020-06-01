@@ -212,6 +212,7 @@ def process(language, data_frame, fourlang_votes):
 
 
 def run(synonyms, filtering, depth, threshold, language, data_type, votes, blacklist, port, combine, wordnet_only = False):
+    print("Initializng modules...")
     graded = True if data_type == "graded" else False
     data_frame = read(language, graded=graded)
     supported_languages = ["en", "it", "de"]
