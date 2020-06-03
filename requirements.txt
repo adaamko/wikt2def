@@ -4,3 +4,4 @@ stanfordnlp
 nltk
 graphviz
 sklearn
+pandas

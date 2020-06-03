@@ -1,0 +1,11 @@
+[semeval]
+synonyms = wiktionary
+filtering = black
+depth = 3
+blacklist = in,auf
+threshold = 1.0
+language = de
+graded = binary
+votes = True
+port = 5006
+CombineSynonyms = SINGLE

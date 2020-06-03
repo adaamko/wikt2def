@@ -1,0 +1,6 @@
+[sherlic]
+synonyms = wiktionary
+depth = 2
+CombineSynonyms = SINGLE
+threshold = 0.1
+dataset = test

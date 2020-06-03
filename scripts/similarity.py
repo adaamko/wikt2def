@@ -333,12 +333,16 @@ class Similarity(object):
         :return: the ratio of overlapping edges per the length of the hypothesis definition
         """
         prem = set([(self.clear_node(s), self.clear_node(r), e['color']) for (s, r, e) in graph_premise.G.edges(data=True)])
-        hyp = set([(self.clear_node(s), self.clear_node(r), e['color']) for (s, r, e) in graph_hypothesis.G.edges(data=True)])
+        hyp = [(self.clear_node(s), self.clear_node(r), e['color']) for (s, r, e) in graph_hypothesis.G.edges(data=True)]
+        hyp_cleared = []
+        for triplet in hyp:
+            if triplet[0] != "A" and triplet[0] != "B" and triplet[1] != "A" and triplet[1] != "B":
+                hyp_cleared.append(triplet)
+        hyp = set(hyp_cleared)
         sim = hyp & prem
         if not sim or len(hyp) == 0:
             return 0
-        else:
-            return float(len(sim)) / len(hyp)
+        return len(sim)/len(hyp)
 
     def multi_def_best_match(self, graph_premises, graph_hypothesises, similarity_function, return_graphs=False):
         """
@@ -386,8 +390,7 @@ class Similarity(object):
         sim = hyp & prem
         if not sim or len(hyp) == 0:
             return 0
-        else:
-            return float(len(sim)) / len(hyp)
+        return len(sim)/len(hyp)
 
     def asim_jac_nodes_graded(self, graph_premise, graph_hypothesis):
         """
@@ -448,7 +451,8 @@ class Similarity(object):
                         if len(output_node[1]) < 1:
                             delete_list.append(output_node[0])
                     for to_del in delete_list:
-                        del edge[1]._atlas[to_del]
+                        if to_del in edge[1]._atlas:
+                            del edge[1]._atlas[to_del]
                 try:
                     if algorithms.has_path(graph_premise_only_zero.G, graph_premise.root, root_id):
                         return 1.0

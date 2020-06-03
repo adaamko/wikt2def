@@ -1,0 +1,6 @@
+[sherlic]
+synonyms = wordnet
+depth = 2
+CombineSynonyms = OR
+threshold = 0.1
+dataset = test

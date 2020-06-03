@@ -208,6 +208,8 @@ class GermanParser(DefaultParserConfig):
         self.wc = 'de'
         self._trad_re = None
         self._def_re = None
+        self._syn_re = None
+        self._syn_word_re = None
         self._lan_re = None
         self._beg_re = None
         self._com_re = None
@@ -227,6 +229,18 @@ class GermanParser(DefaultParserConfig):
             #self._def_re = re.compile(r'==.*==')
             self._def_re = re.compile(r'(^:\[[0-9]\]) (.*)',re.M|re.I)
         return self._def_re
+
+    @property
+    def syn_word_re(self):
+        if not self._syn_word_re:
+            self._syn_word_re = re.compile(r'(?<!\'\'veraltet:\'\' )\[\[([a-zA-ZäßöüÄÖÜ]+[ a-zA-ZäßöüÄÖÜ]*)\]\]')
+        return self._syn_word_re
+
+    @property
+    def syn_re(self):
+        if not self._syn_re:
+            self._syn_re = re.compile(r'\{\{Synonyme\}\}\n([:0-9 ,\'\"\(\)\[\]a-zA-Z\näßöüÄÖÜ]*)')
+        return self._syn_re
 
     @property
     def beg_re(self):
@@ -254,6 +268,8 @@ class EnglishParser(DefaultParserConfig):
         self.wc = 'en'
         self._trad_re = None
         self._def_re = None
+        self._syn_re = None
+        self._syn_word_re = None
         self._lan_re = None
         self._beg_re = None
         self._com_re = None
@@ -285,6 +301,18 @@ class EnglishParser(DefaultParserConfig):
         return self._def_re
 
     @property
+    def syn_word_re(self):
+        if not self._syn_word_re:
+            self._syn_word_re = re.compile(r'\{\{l\|en\|([a-zA-Z.]*)\}\}')
+        return self._syn_word_re
+
+    @property
+    def syn_re(self):
+        if not self._syn_re:
+            self._syn_re = re.compile(r'====Synonyms====\n([* \(\)\'\{\}a-zA-Z|\n,;.]*)')
+        return self._syn_re
+
+    @property
     def beg_re(self):
         if not self._beg_re:
             self._beg_re =  re.compile(r'^\# ')
@@ -309,6 +337,8 @@ class ItalianParser(DefaultParserConfig):
         self.wc = 'it'
         self._trad_re = None
         self._def_re = None
+        self._syn_re = None
+        self._syn_word_re = None
         self._lan_re = None
         self._beg_re = None
         self._com_re = None
@@ -337,6 +367,18 @@ class ItalianParser(DefaultParserConfig):
             #self._def_re = re.compile(r'==.*==')
             self._def_re = re.compile(r'(^\#) (.*)',re.M|re.I)
         return self._def_re
+
+    @property
+    def syn_word_re(self):
+        if not self._syn_word_re:
+            self._syn_word_re = re.compile(r'[a-zA-Z]+[ a-zA-Z]*')
+        return self._syn_word_re
+
+    @property
+    def syn_re(self):
+        if not self._syn_re:
+            self._syn_re = re.compile(r'\{\{-sin-\}\}\n([* \(\)\[\]a-zA-Z|,;\n]*)')
+        return self._syn_re
 
     @property
     def beg_re(self):

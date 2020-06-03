@@ -1,0 +1,7 @@
+[sherlic]
+synonyms = none
+blacklist = in,on,of,at,between,follow,from,through,to,under 
+depth = 2
+CombineSynonyms = SINGLE
+threshold = 0.1
+dataset = dev
