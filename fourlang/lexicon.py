@@ -8,6 +8,7 @@ import re
 import logging
 import copy
 from collections import defaultdict
+import json
 
 
 def nx_to_ud(graph):
@@ -88,6 +89,8 @@ class Lexicon:
         base_fn = os.path.dirname(os.path.abspath(__file__))
         langnames_fn = os.path.join(base_fn, "langnames")
         definitions_fn = os.path.join(base_fn, "definitions", lang)
+        longman_fn = os.path.join(
+            base_fn, "definitions", "longman_firsts.json")
         if os.path.exists(os.path.join("synonyms", lang)):
             synonyms_fn = os.path.join(base_fn, "synonyms", lang)
             with open(synonyms_fn) as f:
@@ -95,8 +98,9 @@ class Lexicon:
                     line = line.split("\t")
                     if line[0] not in self.wiktionary_synonyms:
                         self.wiktionary_synonyms[line[0]] = []
-                    self.wiktionary_synonyms[line[0].strip()].append(line[1].strip("\n"))
-        
+                    self.wiktionary_synonyms[line[0].strip()].append(
+                        line[1].strip("\n"))
+
         self.expanded = {}
         self.substituted = {}
 
@@ -119,6 +123,11 @@ class Lexicon:
         self.stopwords = set(nltk_stopwords.words(self.lang_map[lang]))
         self.lang = lang
 
+        self.longman_definitions = {}
+        if os.path.exists(longman_fn):
+            with open(longman_fn, "r+") as f:
+                self.longman_definitions = json.loads(f.read())
+
         with open(definitions_fn, "r") as f:
             for line in f:
                 line = line.split("\t")
@@ -133,7 +142,7 @@ class Lexicon:
                         synsets = []
                     else:
                         synsets = wn.synsets(word, lang=lang)
-                    
+
                     lemmas = []
                     for i in synsets:
                         if i.pos() not in self.synset_lexicon[word]:
@@ -141,7 +150,8 @@ class Lexicon:
                                 lemmas += i.lemmas(lang="ita")
                             else:
                                 lemmas += i.lemmas()
-                            self.synset_lexicon[word][i.pos()] = [lemma.name() for lemma in lemmas if lemma.name() != word]
+                            self.synset_lexicon[word][i.pos()] = [lemma.name(
+                            ) for lemma in lemmas if lemma.name() != word]
 
                     defi = line[2].strip().strip("\n")
                     defi = self.parse_definition(defi)
@@ -233,7 +243,7 @@ class Lexicon:
                     node = node.lower()
 
                 if node not in self.stopwords and node in self.lexicon:
-                    #if node not in self.freq_words or self.freq_words[node] < 100000:
+                    # if node not in self.freq_words or self.freq_words[node] < 100000:
                     if node in self.expanded:
                         def_graph = self.expanded[node]
                         graph.merge_definition_graph(def_graph, d_node)
@@ -264,7 +274,7 @@ class Lexicon:
 
         nodes = [node for node in graph.G.nodes(data=True)]
         for d_node, node_data in nodes:
-            if "expanded" not in node_data:
+            if "substituted" not in node_data:
                 node = graph.d_clean(d_node).split('_')[0]
                 if node not in self.lexicon:
                     node = node.lower()
@@ -277,12 +287,13 @@ class Lexicon:
                     node_ok = True
                 elif black_or_white.lower() == "black" and node not in one_two_blacklist:
                     node_ok = True
-                if node not in self.stopwords and node in self.lexicon and node_ok and node not in static_blacklist:
+                if node not in self.stopwords and node in self.longman_definitions and node_ok and node not in static_blacklist:
                     if node in self.substituted:
                         def_graph = self.substituted[node]
-                        graph.merge_definition_graph(def_graph, d_node, substitute=True)
+                        graph.merge_definition_graph(
+                            def_graph, d_node, substitute=True)
                     else:
-                        definition = self.lexicon[node]
+                        definition = self.longman_definitions[node]["senses"][0]["definition"]["sen"]
                         if definition:
                             parse = parser_wrapper.parse_text(definition, node)
                             deps = filter_graph(parse[0], blacklist)
@@ -293,11 +304,12 @@ class Lexicon:
                             if len(deps[0]) > 0:
                                 def_graph = dep_to_4lang.get_machines_from_deps_and_corefs(
                                     deps, corefs)
-                                graph.merge_definition_graph(def_graph, d_node, substitute=True)
+                                graph.merge_definition_graph(
+                                    def_graph, d_node, substitute=True)
                                 self.substituted[node] = def_graph
 
         self.substitute(graph, dep_to_4lang, parser_wrapper,
-                    depth-1, blacklist, filt, black_or_white, rarity)
+                        depth-1, blacklist, filt, black_or_white, rarity)
 
     def expand(self, graph, dep_to_4lang, parser_wrapper, depth=1, blacklist=[], filt=True, black_or_white="white", rarity=False):
         if depth == 0:
@@ -356,7 +368,8 @@ class Lexicon:
         if len(nodes) > 1:
             logging.debug(
                 "The graph is too big for multi-definition expansion.\nSimple expand used instead.")
-            self.expand(graph, dep_to_4lang, parser_wrapper, depth=depth, filt=filt, black_or_white=black_or_white)
+            self.expand(graph, dep_to_4lang, parser_wrapper,
+                        depth=depth, filt=filt, black_or_white=black_or_white)
 
         graphs = []
         d_node, node_data = nodes[0]
@@ -380,6 +393,7 @@ class Lexicon:
                     graphs.append(current_graph)
 
         for i in range(len(graphs)):
-            self.expand(graphs[i], dep_to_4lang, parser_wrapper, depth=depth-1, filt=filt, black_or_white=black_or_white)
+            self.expand(graphs[i], dep_to_4lang, parser_wrapper,
+                        depth=depth-1, filt=filt, black_or_white=black_or_white)
 
         return graphs

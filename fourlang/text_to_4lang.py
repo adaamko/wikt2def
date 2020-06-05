@@ -28,6 +28,12 @@ class TextTo4lang():
             return self.lexicon.lexicon[word]
         else:
             return None
+    
+    def get_longman_definition(self, word):
+        if word in self.lexicon.longman_definitions:
+            return self.lexicon.longman_definitions[word]["senses"][0]["definition"]["sen"]
+        else:
+            return None
 
     def get_synsets(self, word, pos="v"):
         if word in self.lexicon.synset_lexicon and pos in self.lexicon.synset_lexicon[word]:
