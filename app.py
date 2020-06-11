@@ -12,10 +12,9 @@ def load_text_to_4lang():
     print("load")
     return text_to_4lang_en, text_to_4lang_de
 
-@st.cache(allow_output_mutation=True)
 def get_4lang_graph(sentence, text_to_4lang, method, depth):
     print(get_4lang_graph)
-    premise = text_to_4lang.process_text(sentence, method=method, depth=depth)
+    premise = text_to_4lang.process_text(sentence, method=method, depth=depth, filt=False, black_or_white="")
     dot = premise.to_dot()
     return dot
 
@@ -27,7 +26,7 @@ def main():
     sentence = st.sidebar.text_input('Input your sentence here:') 
     language = st.sidebar.selectbox("Select Language", ["en", "de"])
     method = st.sidebar.selectbox("Select Method", ["default", "expand", "substitute"])
-    depth = st.sidebar.number_input("Select Recursion depth", format="%i")
+    depth = st.sidebar.number_input("Select Recursion depth", format="%i", value=0)
     if sentence:
         if language == "en":
             dot = get_4lang_graph(sentence, fourlang_en, method, depth)
