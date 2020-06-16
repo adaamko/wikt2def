@@ -1,0 +1,4 @@
+[sherlic]
+synonyms = wiktionary
+depth = 2
+threshold = 0.1

@@ -2,9 +2,12 @@ import os
 import networkx as nx
 from nltk.corpus import stopwords as nltk_stopwords
 from networkx import algorithms
+from nltk.corpus import wordnet as wn
+from statistics import mean
 import re
 import logging
 import copy
+from collections import defaultdict
 
 
 def nx_to_ud(graph):
@@ -78,13 +81,35 @@ class Lexicon:
 
     def __init__(self, lang):
         self.lexicon = {}
+        self.synset_lexicon = defaultdict(lambda: defaultdict(list))
+        self.wiktionary_synonyms = defaultdict(list)
         self.lexicon_list = {}
         self.lang_map = {}
         base_fn = os.path.dirname(os.path.abspath(__file__))
         langnames_fn = os.path.join(base_fn, "langnames")
-        definitions_fn = os.path.join(base_fn, "definitions/" + lang)
+        definitions_fn = os.path.join(base_fn, "definitions", lang)
+        if os.path.exists(os.path.join("synonyms", lang)):
+            synonyms_fn = os.path.join(base_fn, "synonyms", lang)
+            with open(synonyms_fn) as f:
+                for line in f:
+                    line = line.split("\t")
+                    if line[0] not in self.wiktionary_synonyms:
+                        self.wiktionary_synonyms[line[0]] = []
+                    self.wiktionary_synonyms[line[0].strip()].append(line[1].strip("\n"))
+        
         self.expanded = {}
         self.substituted = {}
+
+        self.freq_words = {}
+        freq_fn = os.path.join(base_fn, "umbc_webbase.unigram_freq.min50")
+        if os.path.exists(freq_fn):
+            with open(freq_fn, "r+") as f:
+                for line in f:
+                    line = line.strip().split()
+                    if len(line) > 1:
+                        self.freq_words[line[1]] = int(line[0])
+        if self.freq_words:
+            self.freq_mean = mean(list(self.freq_words.values()))
 
         with open(langnames_fn, "r") as f:
             for line in f:
@@ -99,26 +124,63 @@ class Lexicon:
                 line = line.split("\t")
                 if len(line[2].strip().strip("\n")) > 5:
                     word = line[0].strip()
+
+                    if lang == "it":
+                        synsets = wn.synsets(word, lang="ita")
+                    elif lang == "en":
+                        synsets = wn.synsets(word, lang="eng")
+                    elif lang == "de":
+                        synsets = []
+                    else:
+                        synsets = wn.synsets(word, lang=lang)
+                    
+                    lemmas = []
+                    for i in synsets:
+                        if i.pos() not in self.synset_lexicon[word]:
+                            if lang == "it":
+                                lemmas += i.lemmas(lang="ita")
+                            else:
+                                lemmas += i.lemmas()
+                            self.synset_lexicon[word][i.pos()] = [lemma.name() for lemma in lemmas if lemma.name() != word]
+
                     defi = line[2].strip().strip("\n")
-                    defi = re.sub(re.escape("#"), " ",  defi).strip()
-                    defi = re.sub(r"^intransitive", "",  defi)
-                    defi = re.sub(r"^ditransitive", "",  defi)
-                    defi = re.sub(r"^ambitransitive", "",  defi)
-                    defi = re.sub(r"^transitive", "",  defi)
-                    defi = re.sub(r"^uncountable", "",  defi)
-                    defi = re.sub(r"^countable", "",  defi)
-                    defi = re.sub(r"^pulative ", "",  defi)
-                    defi = re.sub(r"^\. ", "",  defi)
-                    defi_words = defi.split(" ")
-                    first_words = defi_words[0].split(',')
-                    if len(first_words) > 1 and re.sub("\'s", "", first_words[0].lower()) == \
-                            re.sub("\'s", "", first_words[1].lower()):
-                        defi = " ".join([first_words[1]] + defi_words[1:])
+                    defi = self.parse_definition(defi)
                     if line[0].strip() not in self.lexicon_list:
                         self.lexicon[word] = defi.strip()
                         self.lexicon_list[word] = []
                     if defi.strip() != word:
                         self.lexicon_list[word].append(defi.strip())
+
+    def parse_definition(self, defi):
+        defi = re.sub(re.escape("#"), " ",  defi).strip()
+
+        defi = re.sub(r"^A type of", "",  defi)
+        defi = re.sub(r"^Something that", "",  defi)
+        defi = re.sub(r"^Relating to", "",  defi)
+        defi = re.sub(r"^Someone who", "",  defi)
+        defi = re.sub(r"^Of or", "",  defi)
+        defi = re.sub(r"^Any of", "",  defi)
+        defi = re.sub(r"^The act of", "",  defi)
+        defi = re.sub(r"^A group of", "",  defi)
+        defi = re.sub(r"^The part of", "",  defi)
+        defi = re.sub(r"^One of the", "",  defi)
+        defi = re.sub(r"^Used to", "",  defi)
+        defi = re.sub(r"^An attempt to", "",  defi)
+
+        defi = re.sub(r"^intransitive", "",  defi)
+        defi = re.sub(r"^ditransitive", "",  defi)
+        defi = re.sub(r"^ambitransitive", "",  defi)
+        defi = re.sub(r"^transitive", "",  defi)
+        defi = re.sub(r"^uncountable", "",  defi)
+        defi = re.sub(r"^countable", "",  defi)
+        defi = re.sub(r"^pulative ", "",  defi)
+        defi = re.sub(r"^\. ", "",  defi)
+        defi_words = defi.split(" ")
+        first_words = defi_words[0].split(',')
+        if len(first_words) > 1 and re.sub("\'s", "", first_words[0].lower()) == \
+                re.sub("\'s", "", first_words[1].lower()):
+            defi = " ".join([first_words[1]] + defi_words[1:])
+        return defi
 
     def whitelisting(self, graph):
         whitelist = [graph.root]
@@ -162,7 +224,35 @@ class Lexicon:
                             new_blacklist_item.split('_')[0])
         return one_two_blacklist
 
-    def substitute(self, graph, dep_to_4lang, parser_wrapper, depth=1, blacklist=[], filt=True, black_or_white="white"):
+    def rarity_check(self, graph, dep_to_4lang, parser_wrapper):
+        nodes = [node for node in graph.G.nodes(data=True)]
+        for d_node, node_data in nodes:
+            if "expanded" not in node_data:
+                node = graph.d_clean(d_node).split('_')[0]
+                if node not in self.lexicon:
+                    node = node.lower()
+
+                if node not in self.stopwords and node in self.lexicon:
+                    #if node not in self.freq_words or self.freq_words[node] < 100000:
+                    if node in self.expanded:
+                        def_graph = self.expanded[node]
+                        graph.merge_definition_graph(def_graph, d_node)
+                    else:
+                        definition = self.lexicon[node]
+                        if definition:
+                            parse = parser_wrapper.parse_text(definition, node)
+                            deps = parse[0]
+                            corefs = parse[1]
+                            ud_G = ud_to_nx(deps)
+                            #filter_ud(ud_G, blacklist)
+                            deps = nx_to_ud(ud_G)
+                            if len(deps[0]) > 0:
+                                def_graph = dep_to_4lang.get_machines_from_deps_and_corefs(
+                                    deps, corefs)
+                                graph.merge_definition_graph(def_graph, d_node)
+                                self.expanded[node] = def_graph
+
+    def substitute(self, graph, dep_to_4lang, parser_wrapper, depth=1, blacklist=[], filt=True, black_or_white="white", rarity=False):
         if depth == 0:
             return
 
@@ -207,10 +297,12 @@ class Lexicon:
                                 self.substituted[node] = def_graph
 
         self.substitute(graph, dep_to_4lang, parser_wrapper,
-                    depth-1, blacklist, filt, black_or_white)
+                    depth-1, blacklist, filt, black_or_white, rarity)
 
-    def expand(self, graph, dep_to_4lang, parser_wrapper, depth=1, blacklist=[], filt=True, black_or_white="white"):
+    def expand(self, graph, dep_to_4lang, parser_wrapper, depth=1, blacklist=[], filt=True, black_or_white="white", rarity=False):
         if depth == 0:
+            if rarity:
+                self.rarity_check(graph, dep_to_4lang, parser_wrapper)
             return
 
         static_blacklist = ["a", "A", "b", "B"]
@@ -255,9 +347,9 @@ class Lexicon:
                                 self.expanded[node] = def_graph
 
         self.expand(graph, dep_to_4lang, parser_wrapper,
-                    depth-1, blacklist, filt, black_or_white)
+                    depth-1, blacklist, filt, black_or_white, rarity)
 
-    def expand_with_every_def(self, graph, dep_to_4lang, parser_wrapper, depth=1, blacklist=[], filt=True, black_or_white="white"):
+    def expand_with_every_def(self, graph, dep_to_4lang, parser_wrapper, depth=1, blacklist=[], filt=True, black_or_white="white", rarity=False):
         if depth <= 0:
             raise ValueError("Cannot expand with depth {}".format(depth))
         nodes = [node for node in graph.G.nodes(data=True)]

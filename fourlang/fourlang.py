@@ -31,6 +31,13 @@ class FourLang():
         self.G.add_edge(concept1.unique_name(),
                         concept2.unique_name(), color=label)
 
+    def connect_synsets(self, synset_list):
+        for synset in synset_list:
+            if "_" not in synset and "-" not in synset:
+                synset_concept = Concept(synset)
+                self.G.add_edge(
+                    self.root, synset_concept.unique_name(), color=0)
+
     def get_graph(self):
         return self.G
 
@@ -59,7 +66,7 @@ class FourLang():
         if substitute:
             self.G = nx.relabel_nodes(self.G, {node: graph_root})
             if node == self.root:
-                self.root = graph_root                
+                self.root = graph_root
             attrs = {graph_root: {'substituted': True}}
         else:
             self.G.add_edge(node, graph_root, color=0)

@@ -1,0 +1,12 @@
+[semeval]
+synonyms = none
+filtering = none
+depth = 0
+blacklist = none
+threshold = 1.0
+language = it
+graded = binary
+votes = True
+port = 5007
+CombineSynonyms = SINGLE
+wordnet_only = True
