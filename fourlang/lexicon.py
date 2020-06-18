@@ -91,6 +91,13 @@ class Lexicon:
         definitions_fn = os.path.join(base_fn, "definitions", lang)
         longman_fn = os.path.join(
             base_fn, "definitions", "longman_firsts.json")
+
+        self.fourlang_definitions = set()
+        with open(os.path.join(base_fn, "1383"), "r") as f:
+            for line in f:
+                line = line.split("\t")[0]
+                self.fourlang_definitions.add(line)
+
         if os.path.exists(os.path.join("synonyms", lang)):
             synonyms_fn = os.path.join(base_fn, "synonyms", lang)
             with open(synonyms_fn) as f:
@@ -102,7 +109,7 @@ class Lexicon:
                         line[1].strip("\n"))
 
         self.expanded = {}
-        self.substituted = {}
+        self.reduced = {}
 
         self.freq_words = {}
         freq_fn = os.path.join(base_fn, "umbc_webbase.unigram_freq.min50")
@@ -262,7 +269,7 @@ class Lexicon:
                                 graph.merge_definition_graph(def_graph, d_node)
                                 self.expanded[node] = def_graph
 
-    def substitute(self, graph, dep_to_4lang, parser_wrapper, depth=1, blacklist=[], filt=True, black_or_white="white", rarity=False):
+    def substitute(self, graph, dep_to_4lang, parser_wrapper, depth=1, blacklist=[], filt=True, black_or_white="white", rarity=False, substituted=[]):
         if depth == 0:
             return
         static_blacklist = ["a", "A", "b", "B"]
@@ -286,19 +293,21 @@ class Lexicon:
                     node_ok = True
                 elif black_or_white.lower() == "black" and node not in one_two_blacklist:
                     node_ok = True
-                if node not in self.stopwords and (node in self.longman_definitions or node in self.lexicon) and node_ok and node not in static_blacklist:
-                    if node in self.substituted:
-                        def_graph = self.substituted[node]
+                
+                if node not in self.stopwords and node in self.longman_definitions and node not in self.fourlang_definitions and node_ok and node not in static_blacklist and node not in substituted:
+                    if node in self.reduced:
+                        def_graph = self.reduced[node]
                         graph.merge_definition_graph(
                             def_graph, d_node, substitute=True)
                     else:
                         if node in self.longman_definitions:
                             definition = self.longman_definitions[node]["senses"][0]["definition"]["sen"]
-                        elif node in self.lexicon:
-                            definition = self.lexicon[node]
                         if definition:
                             parse = parser_wrapper.parse_text(definition, node)
-                            deps = filter_graph(parse[0], blacklist)
+                            if blacklist:
+                                deps = filter_graph(parse[0], blacklist)
+                            else:
+                                deps = parse[0]
                             corefs = parse[1]
                             ud_G = ud_to_nx(deps)
                             #filter_ud(ud_G, blacklist)
@@ -308,11 +317,15 @@ class Lexicon:
                                     deps, corefs)
                                 graph.merge_definition_graph(
                                     def_graph, d_node, substitute=True)
-                                self.substituted[node] = def_graph
+                                substituted.append(node)
+                                self.reduced[node] = def_graph
                                 
-
+        for d_node, node_data in graph.G.nodes(data=True):
+            node = graph.d_clean(d_node).split('_')[0]
+            if node in self.fourlang_definitions:
+                nx.set_node_attributes(graph.G, {d_node: {'fourlang': True}})
         self.substitute(graph, dep_to_4lang, parser_wrapper,
-                        depth-1, blacklist, filt, black_or_white, rarity)
+                        depth-1, blacklist, filt, black_or_white, rarity, substituted)
 
     def expand(self, graph, dep_to_4lang, parser_wrapper, depth=1, blacklist=[], filt=True, black_or_white="white", rarity=False):
         if depth == 0:

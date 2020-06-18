@@ -108,7 +108,7 @@ class TextTo4lang():
                                     depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white, rarity=rarity)
         elif method == "substitute":
             self.lexicon.substitute(
-                graph, self.dep_to_4lang, self.parser_wrapper, depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white,rarity=rarity)
+                graph, self.dep_to_4lang, self.parser_wrapper, depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white,rarity=rarity, substituted=[])
 
         return graph
 

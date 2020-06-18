@@ -27,6 +27,8 @@ def main():
     language = st.sidebar.selectbox("Select Language", ["en", "de"])
     method = st.sidebar.selectbox("Select Method", ["default", "expand", "substitute"])
     depth = st.sidebar.number_input("Select Recursion depth", format="%i", value=0)
+
+    word = st.sidebar.text_input("Get definition of a word: ")
     if sentence:
         if language == "en":
             dot = get_4lang_graph(sentence, fourlang_en, method, depth)
@@ -34,6 +36,10 @@ def main():
             dot = get_4lang_graph(sentence, fourlang_de, method, depth)
         st.graphviz_chart(dot)
 
+    if word:
+        definition = fourlang_en.get_longman_definition(word)
+        if definition:
+            st.text(definition)
 
 if __name__ == "__main__":
     main()

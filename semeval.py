@@ -218,7 +218,7 @@ def run(synonyms, filtering, depth, threshold, language, data_type, votes, black
     supported_languages = ["en", "it", "de"]
     if language not in supported_languages:
         raise Exception("Not supported language")
-    text_to_4lang = TextTo4lang(lang=language, port=port)
+    text_to_4lang = TextTo4lang(lang=language)
 
     if not wordnet_only:
         fourlang_votes = process_fourlang_votes(
@@ -261,6 +261,10 @@ def run(synonyms, filtering, depth, threshold, language, data_type, votes, black
     print("FP: " + str(fp))
     print("FN: " + str(fn))
     print("TP: " + str(tp))
+
+    for i, score in enumerate(data_frame.score.tolist()):
+        if preds[i] == 0 and score == 1:
+            print(data_frame.premise.tolist()[i] + "\t" + data_frame.hypothesis.tolist()[i])
 
     with open("semeval_output.txt", "w+") as f:
         for i, pred in enumerate(preds):

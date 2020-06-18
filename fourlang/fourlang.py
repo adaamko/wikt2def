@@ -63,17 +63,19 @@ class FourLang():
     def merge_definition_graph(self, graph, node, substitute=False):
         graph_root = graph.root
         #graph.G = nx.relabel_nodes(graph.G, {graph_root: self.root})
+        attrs = {}
         if substitute:
             self.G = nx.relabel_nodes(self.G, {node: graph_root})
             if node == self.root:
                 self.root = graph_root
-            attrs = {graph_root: {'substituted': True}}
+            #attrs = {graph_root: {'substituted': True}}
         else:
             self.G.add_edge(node, graph_root, color=0)
             attrs = {node: {'expanded': True}}
         F = nx.compose(self.G, graph.G)
         self.G = F
-        nx.set_node_attributes(self.G, attrs)
+        if attrs:
+            nx.set_node_attributes(self.G, attrs)
 
     def d_clean(self, string):
         s = string
@@ -129,6 +131,10 @@ class FourLang():
             elif 'expanded' in n_data and n_data['expanded']:
                 node_line = u'\t{0} [shape = circle, label = "{1}", \
                         style="filled"];'.format(
+                    d_node, printname).replace('-', '_')
+            elif 'fourlang' in n_data and n_data['fourlang']:
+                node_line = u'\t{0} [shape = circle, label = "{1}", \
+                        style="filled", fillcolor=red];'.format(
                     d_node, printname).replace('-', '_')
             elif 'substituted' in n_data and n_data['substituted']:
                 node_line = u'\t{0} [shape = circle, label = "{1}", \
