@@ -13,10 +13,10 @@ def load_text_to_4lang():
     return text_to_4lang_en, text_to_4lang_de
 
 def get_4lang_graph(sentence, text_to_4lang, method, depth):
-    print(get_4lang_graph)
     premise = text_to_4lang.process_text(sentence, method=method, depth=depth, filt=False, black_or_white="")
+    ud_graph = text_to_4lang.get_ud_parse(sentence)
     dot = premise.to_dot()
-    return dot
+    return dot, ud_graph
 
 def main():
     st.title("The processed 4lang graph")
@@ -31,10 +31,12 @@ def main():
     word = st.sidebar.text_input("Get definition of a word: ")
     if sentence:
         if language == "en":
-            dot = get_4lang_graph(sentence, fourlang_en, method, depth)
+            dot, ud_graph = get_4lang_graph(sentence, fourlang_en, method, depth)
         elif language == "de":
-            dot = get_4lang_graph(sentence, fourlang_de, method, depth)
-        st.graphviz_chart(dot)
+            dot, ud_graph = get_4lang_graph(sentence, fourlang_de, method, depth)
+
+        st.graphviz_chart(dot, use_container_width=True)
+        st.graphviz_chart(ud_graph, use_container_width=True)
 
     if word:
         definition = fourlang_en.get_longman_definition(word)

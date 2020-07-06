@@ -9,6 +9,7 @@ import numpy as np
 from .dep_to_4lang import DepTo4lang
 from .stanford_wrapper import StanfordParser
 from .lexicon import Lexicon
+from .utils import dep_to_dot
 from networkx.readwrite import json_graph
 
 __LOGLEVEL__ = 'INFO'
@@ -86,6 +87,17 @@ class TextTo4lang():
                                     depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white, rarity=rarity)
 
         return graph
+
+    def get_ud_parse(self, text):
+        logging.info("parsing text...")
+        preproc_sens = []
+        preproc_line = self.preprocess_text(str(text).strip())
+        preproc_sens.append(preproc_line)
+        parse = self.parser_wrapper.parse_text("\n".join(preproc_sens))
+        deps = parse[0]
+        dot_deps = dep_to_dot(deps)
+
+        return dot_deps
 
     def process_text(self, text, method="default", depth=1, blacklist=[], filt=True, multi_definition=False, black_or_white="white", rarity=False):
         logging.info("parsing text...")

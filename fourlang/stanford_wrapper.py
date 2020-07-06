@@ -15,18 +15,13 @@ class StanfordParser():
         self.parse = {}
 
     def parse_text(self, text, word=None):
-        if word and word in self.parse:
-            deps = self.parse[word]
-        else:
-            deplist = ["acl:relcl", "aux", "aux:pass", "case", "cc", "cc:preconj", "compound", "compound:prt", "conj", "cop", "det", "det:predet", "discourse", "expl", "fixed", "flat",
-                       "goeswith", "iobj" ",list", "mark", "nmod:npmod", "nmod:poss", "nmod:tmod", "nsubj:pass", "obl", "obl:tmod", "orphan", "parataxis", "punct", "reparandum", "vocative"]
+        deplist = ["acl:relcl", "aux", "aux:pass", "case", "cc", "cc:preconj", "compound", "compound:prt", "conj", "cop", "det", "det:predet", "discourse", "expl", "fixed", "flat",
+                    "goeswith", "iobj" ",list", "mark", "nmod:npmod", "nmod:poss", "nmod:tmod", "nsubj:pass", "obl", "obl:tmod", "orphan", "parataxis", "punct", "reparandum", "vocative"]
 
-            deps = self.parser.parse(text)["deps"]
-            #for i, prem in enumerate(deps[0]):
-            #    if prem[0] in deplist:
-            #        print("Sentence: " + text + "\t" + str(prem))
-            if word:
-                self.parse[word] = deps
+        deps = self.parser.parse(text)["deps"]
+        #for i, prem in enumerate(deps[0]):
+        #    if prem[0] in deplist:
+        #        print("Sentence: " + text + "\t" + str(prem))
 
         corefs = []
         return deps, corefs
