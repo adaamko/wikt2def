@@ -9,6 +9,7 @@ import numpy as np
 from .dep_to_4lang import DepTo4lang
 from .stanford_wrapper import StanfordParser
 from .lexicon import Lexicon
+from .utils import dep_to_dot
 from networkx.readwrite import json_graph
 
 __LOGLEVEL__ = 'INFO'
@@ -18,14 +19,20 @@ __MACHINE_LOGLEVEL__ = 'INFO'
 class TextTo4lang():
     square_regex = re.compile("\[.*?\]")
 
-    def __init__(self, lang, port=5005):
-        self.parser_wrapper = StanfordParser(port=port)
+    def __init__(self, lang):
+        self.parser_wrapper = StanfordParser(lang)
         self.dep_to_4lang = DepTo4lang()
         self.lexicon = Lexicon(lang)
 
     def get_definition(self, word):
         if word in self.lexicon.lexicon:
             return self.lexicon.lexicon[word]
+        else:
+            return None
+    
+    def get_longman_definition(self, word):
+        if word in self.lexicon.longman_definitions:
+            return self.lexicon.longman_definitions[word]["senses"][0]["definition"]["sen"]
         else:
             return None
 
@@ -81,6 +88,17 @@ class TextTo4lang():
 
         return graph
 
+    def get_ud_parse(self, text):
+        logging.info("parsing text...")
+        preproc_sens = []
+        preproc_line = self.preprocess_text(str(text).strip())
+        preproc_sens.append(preproc_line)
+        parse = self.parser_wrapper.parse_text("\n".join(preproc_sens))
+        deps = parse[0]
+        dot_deps = dep_to_dot(deps)
+
+        return dot_deps
+
     def process_text(self, text, method="default", depth=1, blacklist=[], filt=True, multi_definition=False, black_or_white="white", rarity=False):
         logging.info("parsing text...")
         preproc_sens = []
@@ -102,7 +120,7 @@ class TextTo4lang():
                                     depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white, rarity=rarity)
         elif method == "substitute":
             self.lexicon.substitute(
-                graph, self.dep_to_4lang, self.parser_wrapper, depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white,rarity=rarity)
+                graph, self.dep_to_4lang, self.parser_wrapper, depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white,rarity=rarity, substituted=[])
 
         return graph
 
