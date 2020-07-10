@@ -1,4 +1,4 @@
-***If you are interested in the system submitted to the SemEval 2020 Task 2: Predicting Multilingual and Cross-Lingual (Graded) Lexical Entailment, please go to the Semeval branch for detailed instructions to reproduce our results. The master and the sherlic branch contains futher improvements and experiments on the SherLIiC: A Typed Event-Focused Lexical Inference Benchmark for Evaluating Natural Language Inference dataset.***
+***If you are interested in the system submitted to the SemEval 2020 Task 2: Predicting Multilingual and Cross-Lingual (Graded) Lexical Entailment, please go to the Semeval branch for detailed instructions to reproduce our results. The master and the sherlic branch contain futher improvements and experiments on the SherLIiC: A Typed Event-Focused Lexical Inference Benchmark for Evaluating Natural Language Inference dataset.***
 
 
 # wikt2def
