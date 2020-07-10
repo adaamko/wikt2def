@@ -18,13 +18,13 @@ class StanfordParser():
         deplist = ["acl:relcl", "aux", "aux:pass", "case", "cc", "cc:preconj", "compound", "compound:prt", "conj", "cop", "det", "det:predet", "discourse", "expl", "fixed", "flat",
                     "goeswith", "iobj" ",list", "mark", "nmod:npmod", "nmod:poss", "nmod:tmod", "nsubj:pass", "obl", "obl:tmod", "orphan", "parataxis", "punct", "reparandum", "vocative"]
 
-        deps = self.parser.parse(text)["deps"]
+        deps = self.parser.parse(text)
         #for i, prem in enumerate(deps[0]):
         #    if prem[0] in deplist:
         #        print("Sentence: " + text + "\t" + str(prem))
 
         corefs = []
-        return deps, corefs
+        return deps["deps"], corefs, deps["doc"]
 
     def load_from_dict(self):
         with open("def_parses", "r") as f:

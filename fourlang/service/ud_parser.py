@@ -31,7 +31,7 @@ class UdParser():
                 dep_list.append(curr_dep)
             sen_deps.append(dep_list)
 
-        return {"deps": sen_deps}
+        return {"deps": sen_deps, "doc": doc}
 
     def lemmatize(self, sentence):
         doc = self.wrapper.nlp(sentence)

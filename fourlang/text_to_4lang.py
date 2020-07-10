@@ -10,6 +10,7 @@ from .dep_to_4lang import DepTo4lang
 from .stanford_wrapper import StanfordParser
 from .lexicon import Lexicon
 from .utils import dep_to_dot
+from .grammars.ud_to_fourlang import UdToFourlang
 from networkx.readwrite import json_graph
 
 __LOGLEVEL__ = 'INFO'
@@ -23,6 +24,7 @@ class TextTo4lang():
         self.parser_wrapper = StanfordParser(lang)
         self.dep_to_4lang = DepTo4lang()
         self.lexicon = Lexicon(lang)
+        self.ud_to_fourlang = UdToFourlang()
 
     def get_definition(self, word):
         if word in self.lexicon.lexicon:
@@ -108,6 +110,7 @@ class TextTo4lang():
         deps = parse[0]
         corefs = parse[1]
 
+        self.ud_to_fourlang.ud_to_irtg(parse[2])
         graph = self.dep_to_4lang.get_machines_from_deps_and_corefs(
             deps, corefs)
 
