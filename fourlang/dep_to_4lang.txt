@@ -30,7 +30,8 @@ nmod:npmod	-,-	NPMOD
 nmod:poss	-,-	HAS
 nmod:tmod	-,-	AT
 nsubj	1,0
-nsubj:pass	-,-
+nsubj:pass	2,-
+csubj:pass	2,-
 nummod	0,-
 obj	2,-
 obl	-,-
