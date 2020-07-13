@@ -94,7 +94,7 @@ class UdToFourlangGrammar():
     def get_relation_terminal(self, word):
         return f'"({word}<relation> / {word})"', f'"({word}<relation> / {word})"'
 
-    def generate_grammar(self, i, word_index, og):
+    def generate_grammar(self, i, word_index, og, dependencies):
         _, lemma, pos, children = word_index[i]
         #curr_terminal_lines = get_terminal_lines(lemma, pos)
         for dep, j in children:
@@ -105,7 +105,7 @@ class UdToFourlangGrammar():
 
             binary_line = [
                 "",
-                f"{pos} -> {pos}_{cpos}_{dep}_{i}({pos}, {cpos})",
+                f"{pos} -> {pos}_{cpos}_{dep}_{i}({pos}, {cpos}) [{dependencies}]",
                 f"[ud] {binary_fss[0]}",
                 f"[fourlang] {binary_fss[1]}",
                 ""
@@ -114,7 +114,7 @@ class UdToFourlangGrammar():
             og.write("\n".join(binary_line))
 
             self.generate_grammar(
-                j, word_index, og)
+                j, word_index, og, dependencies)
 
     def generate_terminals(self, i, word_index, og):
         _, lemma, pos, children = word_index[i]
@@ -189,12 +189,12 @@ class UdToFourlang():
             ""]
         f.write('\n'.join(lines))
 
-    def generate_rules(self, sen, root_i, word_index, og):
+    def generate_rules(self, sen, root_i, word_index, og, dependencies):
         root_pos = word_index[root_i][2]
         og.write(f"S! -> ROOT({root_pos})\n")
         og.write("[ud] ?1\n")
         og.write("[fourlang] f_root(f_relation(?1))\n\n")
-        self.grammar.generate_grammar(root_i, word_index, og)
+        self.grammar.generate_grammar(root_i, word_index, og, 2/dependencies)
         og.write("/* terminal rules */\n\n")
 
         self.grammar.generate_terminals(root_i, word_index, og)
@@ -246,13 +246,15 @@ class UdToFourlang():
         base_fn = os.path.dirname(os.path.abspath(__file__))
         out = os.path.join(base_fn, "dep_to_4lang")
         with open(f"{out}.input", 'w') as of:
-            for sen in doc.sentences:
-                word_index, root_i = self.get_word_index(sen)
-                self.print_input_header(sen, of)
-                graph = self.make_graph_string(root_i, word_index)
-                of.write(graph + "\n")
             of.write("(dummy_0 / dummy_0)\n")
+            with open(f"{out}.irtg", 'w') as og:
+                for sen in doc.sentences:
+                    dependencies = len(sen.dependencies)
+                    word_index, root_i = self.get_word_index(sen)
+                    self.print_input_header(sen, of)
+                    graph = self.make_graph_string(root_i, word_index)
+                    of.write(graph + "\n")
 
-        with open(f"{out}.irtg", 'w') as og:
-            self.print_grammar_header(sen, og)
-            self.generate_rules(sen, root_i, word_index, og)
+                    self.print_grammar_header(sen, og)
+                    self.generate_rules(
+                        sen, root_i, word_index, og, dependencies)
