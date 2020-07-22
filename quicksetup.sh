@@ -14,3 +14,5 @@ mkdir dictionaries
 mv de_to_en dictionaries/.
 python -m nltk.downloader stopwords
 python -m nltk.downloader wordnet
+wget http://sandbox.hlt.bme.hu/~adaamko/alto-2.3.6-SNAPSHOT-all.jar
+mv alto-2.3.6-SNAPSHOT-all.jar fourlang/grammars/.
