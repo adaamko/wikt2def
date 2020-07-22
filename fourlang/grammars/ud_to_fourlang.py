@@ -40,7 +40,7 @@ REPLACE_MAP = {
 class UdToFourlangGrammar():
     def __init__(self):
         super().__init__()
-        self.default_binary_rule = "?2"
+        self.default_binary_rule = "?1"
         self.bin_fnc = {}
         self.relation_terms = set()
 
@@ -51,7 +51,7 @@ class UdToFourlangGrammar():
             return f'f_dep1(merge(merge(?1,"(r<root> :{ud_edge} (d1<dep1>))"), r_dep1(?2)))', f'f_dep1(merge(merge(?1,"(d1<dep1> :{fourlang_edge} (r<root>))"), r_dep1(?2)))'
 
         def r_relation(ud_edge, relation):
-            return f'f_dep1(merge(merge(?1,"(r<root> :{ud_edge} (d1<dep1>))"), r_dep1(?2)))', f'[fourlang] f_dep1(merge(merge(?1,"({relation}<relation> / {relation} :1 (r<root>) :2 (d1<dep1>)))"), r_dep1(?2)))'
+            return f'f_dep1(merge(merge(?1,"(r<root> :{ud_edge} (d1<dep1>))"), r_dep1(?2)))', f'f_dep1(merge(merge(?1,"({relation}<relation> / {relation} :1 (r<root>) :2 (d1<dep1>)))"), r_dep1(?2)))'
 
         def r_in_out(ud_edge, fourlang_out, fourlang_in):
             return f'f_dep1(merge(merge(?1,"(r<root> :{ud_edge} (d1<dep1>))"), r_dep1(?2)))', f'f_dep1(merge(merge(?1,"(r<root> :{fourlang_out} (d1<dep1> :{fourlang_in} (r<root>)))"), r_dep1(?2)))'
@@ -88,8 +88,8 @@ class UdToFourlangGrammar():
     def get_dependency_rules(self, pos, dep, cpos):
         return self.bin_fnc.get((pos, dep, cpos))
 
-    def get_default_terminal(self, word):
-        return f'"({word}<root> / {word})"', f'"({word}<root> / {word})"'
+    def get_default_terminal(self, word, i):
+        return f'"({i}<root> / {word})"', f'"({word}<root> / {word})"'
 
     def get_relation_terminal(self, word):
         return f'"({word}<relation> / {word})"', f'"({word}<relation> / {word})"'
@@ -102,7 +102,6 @@ class UdToFourlangGrammar():
             og.write(f"/* {lemma}_{pos} -{dep}-> {clemma}_{cpos} */\n\n")
 
             binary_fss = self.get_dependency_rules(pos, dep, cpos)
-
             binary_line = [
                 "",
                 f"{pos} -> {pos}_{cpos}_{dep}_{i}({pos}, {cpos}) [{dependencies}]",
@@ -116,9 +115,95 @@ class UdToFourlangGrammar():
             self.generate_grammar(
                 j, word_index, og, dependencies)
 
+    def handle_conj(self, parent_pos, parent_dep, current_pos, children_pos, og, i):
+        coordination = [
+            "",
+            f"{parent_pos} -> coordination_{i}(SUBGRAPHNODE, COORD)",
+            f'[ud] f_dep1(merge(merge(?1,"(r<root> :{parent_dep} (d1<dep1>))"), r_dep1(?2)))',
+            f'[fourlang] r_coord_root(merge(?1, ?2))',
+            ""
+        ]
+
+        handle_coord = [
+            "",
+            f"COORD -> handle_coord_{i}(COORD, {children_pos})",
+            f'[ud] f_dep1(merge(merge(?1,"(r<root> :CONJ (d1<dep1>))"), r_dep1(?2)))',
+            f'[fourlang] f_dep1(merge(merge(?1,"(r<coord> :2 (d1<dep1>))"), r_dep1(?2)))',
+            ""
+        ]
+
+        coord_to_pos = [
+            "",
+            f"COORD -> coord_to_{current_pos}{i}({current_pos})",
+            f'[ud] ?1',
+            f'[fourlang] f_dep1(merge("(r<coord> :2 (d1<dep1>))", r_dep1(?1)))',
+            "",
+            f"SUBGRAPHNODE -> subgraph_to_node{i}({parent_pos})",
+            f"[ud] ?1",
+            f'[fourlang] r_coord(?1)',
+            ""
+        ]
+        og.write("\n".join(coordination))
+        og.write("\n".join(handle_coord))
+        og.write("\n".join(coord_to_pos))
+
+    def handle_acl_relcl(self, parent_pos, current_pos, children_pos, og, i):
+        acl_relcl = [
+            "",
+            f"{parent_pos} -> handle_acl_relcl{i}({parent_pos}, {current_pos}, {children_pos})",
+            f'[ud] f_dep2(merge(merge(?1,"(r<root> :ACL_RELCL (d2<dep2>))"), r_dep2(f_dep1(merge(merge(?2,"(r<root> :NSUBJ (d1<dep1>))"), r_dep1(?3))))))',
+            f'[fourlang] f_dep1(merge(merge(?1,"(r<root> :0 (d1<dep1>))"), r_dep1(?2)))',
+            ""
+        ]
+
+        og.write("\n".join(acl_relcl))
+
+    def handle_obl_case(self, parent_pos, current_pos, children_pos, og, i):
+        obl_case = [
+            "",
+            f"{parent_pos} -> handle_obl_case{i}({parent_pos}, {current_pos}, {children_pos})",
+            f'[ud] f_dep2(merge(merge(?1,"(r<root> :OBL (d2<dep2>))"), r_dep2(f_dep1(merge(merge(?2,"(r<root> :CASE (d1<dep1>))"), r_dep1(?3))))))',
+            f'[fourlang] f_dep2(f_dep1(merge(merge(merge(?1,"(d1<dep1> :1 (r<root>) :2 (d2<dep2>))"), r_dep1(?3)), r_dep2(?2))))',
+            ""
+        ]
+
+        og.write("\n".join(obl_case))
+
+    def get_trigger(self, word_index, parent, curr, children, og, i):
+        parent_dep = parent[2]
+        parent_pos = parent[1]
+        curr_lemma = curr[0]
+        curr_pos = curr[1]
+        children_deps = [child[0] for child in children]
+        children_lemma = [word_index[child[1]][1]
+                          for child in children]
+        children_pos = [word_index[child[1]][2]
+                        for child in children]
+
+        if "CONJ" in children_deps:
+            self.handle_conj(parent_pos, parent_dep, curr_pos,
+                             children_pos[children_deps.index("CONJ")], og, i)
+        if parent_dep == "ACL_RELCL":
+            self.handle_acl_relcl(
+                parent_pos, curr_pos, children_pos[children_deps.index("NSUBJ")], og, i)
+        if parent_dep == "OBL":
+            self.handle_obl_case(
+                parent_pos, curr_pos, children_pos[children_deps.index("CASE")], og, i)
+
+    def handle_subgraphs(self, i, word_index, og, dependencies, parent=None):
+        _, lemma, pos, children = word_index[i]
+        #curr_terminal_lines = get_terminal_lines(lemma, pos)
+        if parent:
+            self.get_trigger(word_index, parent, (lemma, pos), children, og, i)
+        for dep, j in children:
+            clemma, cpos = word_index[j][1:3]
+
+            self.handle_subgraphs(
+                j, word_index, og, dependencies, parent=(lemma, pos, dep))
+
     def generate_terminals(self, i, word_index, og):
         _, lemma, pos, children = word_index[i]
-        terminal_fss = self.get_default_terminal(lemma)
+        terminal_fss = self.get_default_terminal(lemma, i)
 
         terminal_line = [
             "",
@@ -197,6 +282,8 @@ class UdToFourlang():
         self.grammar.generate_grammar(root_i, word_index, og, 2/dependencies)
         og.write("/* terminal rules */\n\n")
 
+        self.grammar.handle_subgraphs(root_i, word_index, og, 3/dependencies)
+
         self.grammar.generate_terminals(root_i, word_index, og)
 
         og.write("/* relation terminal rules */\n\n")
@@ -204,7 +291,7 @@ class UdToFourlang():
 
     def make_graph_string(self, i, word_index):
         _, lemma, pos, children = word_index[i]
-        graph_string = "({0} / {0}".format(lemma)
+        graph_string = "({0} / {1}".format(i, lemma)
         for dep, j in children:
             graph_string += ' :{0} '.format(dep.replace(':', '_'))
             graph_string += self.make_graph_string(j, word_index)
@@ -246,15 +333,17 @@ class UdToFourlang():
         base_fn = os.path.dirname(os.path.abspath(__file__))
         out = os.path.join(base_fn, "dep_to_4lang")
         with open(f"{out}.input", 'w') as of:
-            of.write("(dummy_0 / dummy_0)\n")
             with open(f"{out}.irtg", 'w') as og:
                 for sen in doc.sentences:
                     dependencies = len(sen.dependencies)
                     word_index, root_i = self.get_word_index(sen)
                     self.print_input_header(sen, of)
+                    of.write("(dummy_0 / dummy_0)\n")
                     graph = self.make_graph_string(root_i, word_index)
                     of.write(graph + "\n")
 
                     self.print_grammar_header(sen, og)
                     self.generate_rules(
                         sen, root_i, word_index, og, dependencies)
+        cmd = "java -Xmx16G -cp /home/adaamko/projects/wikt2def/fourlang/grammars/alto-2.3.6-SNAPSHOT-all.jar de.up.ling.irtg.script.ParsingEvaluator /home/adaamko/projects/wikt2def/fourlang/grammars/dep_to_4lang.input -g /home/adaamko/projects/wikt2def/fourlang/grammars/dep_to_4lang.irtg -I ud -Ofourlang=GraphViz-dot -o /home/adaamko/projects/wikt2def/fourlang/grammars/grammar.output"
+        os.system(cmd)
