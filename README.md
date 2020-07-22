@@ -1,3 +1,6 @@
+***If you are interested in the system submitted to the SemEval 2020 Task 2: Predicting Multilingual and Cross-Lingual (Graded) Lexical Entailment, please go to the Semeval branch for detailed instructions to reproduce our results. The master and the sherlic branch contain futher improvements and experiments on the SherLIiC: A Typed Event-Focused Lexical Inference Benchmark for Evaluating Natural Language Inference dataset.***
+
+
 # wikt2def
 
 This repository contains a tool for automatic extraction of wiktionary definitions. It heavily builds on https://github.com/juditacs/wikt2dict. It also contains code to build semantic graphs from text, based on https://github.com/kornai/4lang.
