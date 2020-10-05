@@ -20,8 +20,8 @@ __MACHINE_LOGLEVEL__ = 'INFO'
 class TextTo4lang():
     square_regex = re.compile("\[.*?\]")
 
-    def __init__(self, lang):
-        self.parser_wrapper = StanfordParser(lang)
+    def __init__(self, lang, serverless=True, port=5005):
+        self.parser_wrapper = StanfordParser(lang, serverless, port)
         self.dep_to_4lang = DepTo4lang()
         self.lexicon = Lexicon(lang)
         self.ud_to_fourlang = UdToFourlang()

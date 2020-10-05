@@ -2,6 +2,7 @@ import argparse
 import copy
 import inspect
 import math
+import os
 import re
 from collections import defaultdict
 
@@ -9,8 +10,8 @@ import networkx as nx
 from graphviz import Source
 from networkx.readwrite import json_graph
 from nltk.corpus import wordnet as wn
-from sklearn.metrics import precision_recall_fscore_support as pr
 from sklearn.metrics import confusion_matrix as cm
+from sklearn.metrics import precision_recall_fscore_support as pr
 from tqdm import tqdm
 
 from fourlang.lexicon import Lexicon
@@ -58,7 +59,7 @@ def connect_synsets(text_to_4lang, graph, synset_type, combine):
     synsets_wordnet = []
     synsets_v = text_to_4lang.get_synsets(graph.root.split("_")[0])
     synsets_n = text_to_4lang.get_synsets(
-            graph.root.split("_")[0], pos="n")
+        graph.root.split("_")[0], pos="n")
     if synsets_v:
         synsets_top = []
         if len(synsets_v) > 5:
@@ -75,7 +76,8 @@ def connect_synsets(text_to_4lang, graph, synset_type, combine):
             synsets_top = synsets_n
         synsets_wordnet += synsets_top
 
-    wiktionary_synsets = text_to_4lang.lexicon.wiktionary_synonyms[graph.root.split("_")[0]]
+    wiktionary_synsets = text_to_4lang.lexicon.wiktionary_synonyms[graph.root.split("_")[
+        0]]
 
     if synset_type == "wordnet" and combine == "SINGLE":
         graph.connect_synsets(synsets_wordnet)
@@ -85,7 +87,8 @@ def connect_synsets(text_to_4lang, graph, synset_type, combine):
         synsets = list(set(synsets_wordnet).union(set(wiktionary_synsets)))
         graph.connect_synsets(synsets)
     elif combine == "AND":
-        synsets = list(set(synsets_wordnet).intersection(set(wiktionary_synsets)))
+        synsets = list(set(synsets_wordnet).intersection(
+            set(wiktionary_synsets)))
         graph.connect_synsets(synsets)
 
 
@@ -97,11 +100,14 @@ def process(text_to_4lang, data_frame, synonyms, depth, threshold, combine, blac
         premise = data_frame["premise"][index]
         hypothesis = data_frame["hypothesis"][index]
         score = data_frame.score[index]
-        graph_premise = text_to_4lang.process_deps(premise, method="expand", depth=0, blacklist=blacklist, filt=False, black_or_white="")
+        graph_premise = text_to_4lang.process_deps(
+            premise, method="expand", depth=0, blacklist=blacklist, filt=False, black_or_white="")
         connect_synsets(text_to_4lang, graph_premise, synonyms, combine)
-        graph_premise = text_to_4lang.process_graph(graph_premise, method="expand", depth=depth, blacklist=blacklist, filt=False, black_or_white="")
+        graph_premise = text_to_4lang.process_graph(
+            graph_premise, method="expand", depth=depth, blacklist=blacklist, filt=False, black_or_white="")
 
-        graph_hypothesis = text_to_4lang.process_deps(hypothesis, method="expand", depth=1, blacklist=blacklist, filt=False, black_or_white="")
+        graph_hypothesis = text_to_4lang.process_deps(
+            hypothesis, method="expand", depth=1, blacklist=blacklist, filt=False, black_or_white="")
         pred = asim_jac_edges(graph_premise, graph_hypothesis)
         guesses.append(pred)
         if pred >= threshold:
@@ -112,17 +118,21 @@ def process(text_to_4lang, data_frame, synonyms, depth, threshold, combine, blac
     return preds
 
 
-def run(synonyms, depth, threshold, combine, dataset="dev", blacklist=["in","of","on"]):
+def run(synonyms, depth, threshold, combine, dataset="dev", blacklist=["in", "of", "on"]):
     print("Initializng modules...")
     text_to_4lang = TextTo4lang(lang="en")
+    if os.path.exists("sherlic_expanded"):
+        text_to_4lang.lexicon.load_expanded("sherlic_expanded")
+
     data = read_sherliic(
-        "data/" + dataset  +".csv", ud_path="data/relation_index.tsv", keep_context=True)
+        "data/" + dataset + ".csv", ud_path="data/relation_index.tsv", keep_context=True)
     data_frame = build_graph(data)
     data['premise_text'] = data["prem_argleft"] + " " + \
         data["premise"] + " " + data["prem_argright"]
     data['hyp_text'] = data["hypo_argleft"] + " " + \
         data["hypothesis"] + " " + data["hypo_argright"]
-    preds = process(text_to_4lang, data_frame, synonyms, depth, threshold, combine, blacklist)
+    preds = process(text_to_4lang, data_frame, synonyms,
+                    depth, threshold, combine, blacklist)
 
     bPrecis, bRecall, bFscore, bSupport = pr(data_frame.score.tolist(), preds)
 
@@ -136,6 +146,8 @@ def run(synonyms, depth, threshold, combine, dataset="dev", blacklist=["in","of"
     print("FP: " + str(fp))
     print("FN: " + str(fn))
     print("TP: " + str(tp))
+
+    text_to_4lang.lexicon.save_expanded("sherlic_expanded")
 
     with open("sherlic_output.txt", "w+") as f:
         for i, pred in enumerate(preds):

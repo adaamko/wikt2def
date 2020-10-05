@@ -34,7 +34,8 @@ def main():
             dot, ud_graph = get_4lang_graph(sentence, fourlang_en, method, depth)
         elif language == "de":
             dot, ud_graph = get_4lang_graph(sentence, fourlang_de, method, depth)
-
+        with open("parse.dot", "w+") as f:
+            f.write(dot)
         st.graphviz_chart(dot, use_container_width=True)
         st.graphviz_chart(ud_graph, use_container_width=True)
 

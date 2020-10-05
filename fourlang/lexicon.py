@@ -1,14 +1,16 @@
-import os
-import networkx as nx
-from nltk.corpus import stopwords as nltk_stopwords
-from networkx import algorithms
-from nltk.corpus import wordnet as wn
-from statistics import mean
-import re
-import logging
 import copy
-from collections import defaultdict
 import json
+import logging
+import os
+import pickle
+import re
+from collections import defaultdict
+from statistics import mean
+
+import networkx as nx
+from networkx import algorithms
+from nltk.corpus import stopwords as nltk_stopwords
+from nltk.corpus import wordnet as wn
 
 
 def nx_to_ud(graph):
@@ -293,7 +295,7 @@ class Lexicon:
                     node_ok = True
                 elif black_or_white.lower() == "black" and node not in one_two_blacklist:
                     node_ok = True
-                
+
                 if node not in self.stopwords and node in self.longman_definitions and node not in self.fourlang_definitions and node_ok and node not in static_blacklist and node not in substituted:
                     if node in self.reduced:
                         def_graph = self.reduced[node]
@@ -319,7 +321,7 @@ class Lexicon:
                                     def_graph, d_node, substitute=True)
                                 substituted.append(node)
                                 self.reduced[node] = def_graph
-                                
+
         for d_node, node_data in graph.G.nodes(data=True):
             node = graph.d_clean(d_node).split('_')[0]
             if node in self.fourlang_definitions:
@@ -413,3 +415,12 @@ class Lexicon:
                         depth=depth-1, filt=filt, black_or_white=black_or_white)
 
         return graphs
+
+    def save_expanded(self, path):
+        with open(path, 'wb') as handle:
+            pickle.dump(self.expanded, handle,
+                        protocol=pickle.HIGHEST_PROTOCOL)
+
+    def load_expanded(self, path):
+        with open(path, 'rb') as handle:
+            self.expanded = pickle.load(handle)
