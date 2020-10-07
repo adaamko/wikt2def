@@ -53,7 +53,7 @@ class TextTo4lang():
         t = t.strip()
         return t
 
-    def process_graph(self, graph, method="expand", depth=1, blacklist=[], filt=True, multi_definition=False, black_or_white="white", rarity=False):
+    def process_graph(self, graph, method="expand", depth=1, blacklist=[], filt=True, multi_definition=False, black_or_white="white", apply_from_depth=None, rarity=False):
         if method == "expand":
             if multi_definition:
                 return self.lexicon.expand_with_every_def(graph, self.dep_to_4lang, self.parser_wrapper, depth=depth,
@@ -68,7 +68,7 @@ class TextTo4lang():
         return graph
 
 
-    def process_deps(self, deps,  method="default", depth=1, blacklist=[], filt=True, multi_definition=False, black_or_white="white", rarity=False):
+    def process_deps(self, deps,  method="default", depth=1, blacklist=[], filt=True, multi_definition=False, black_or_white="white", apply_from_depth=None, rarity=False):
         corefs = []
         if "root" not in [d[0] for d in deps[0]]:
             unique, counts = np.unique(np.array([d[1] for d in deps[0]]), axis=0, return_counts=True)
@@ -101,7 +101,7 @@ class TextTo4lang():
 
         return dot_deps
 
-    def process_text(self, text, method="default", depth=1, blacklist=[], filt=True, multi_definition=False, black_or_white="white", rarity=False):
+    def process_text(self, text, method="default", depth=1, blacklist=[], filt=True, multi_definition=False, black_or_white="white", apply_from_depth=None, rarity=False):
         logging.info("parsing text...")
         preproc_sens = []
         preproc_line = self.preprocess_text(str(text).strip())

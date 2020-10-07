@@ -329,7 +329,10 @@ class Lexicon:
         self.substitute(graph, dep_to_4lang, parser_wrapper,
                         depth-1, blacklist, filt, black_or_white, rarity, substituted)
 
-    def expand(self, graph, dep_to_4lang, parser_wrapper, depth=1, blacklist=[], filt=True, black_or_white="white", rarity=False):
+    def expand(self, graph, dep_to_4lang, parser_wrapper, depth=1, blacklist=[], filt=True, black_or_white="white", apply_from_depth=None, rarity=False):
+        if not apply_from_depth:
+            apply_from_depth = depth
+
         if depth == 0:
             if rarity:
                 self.rarity_check(graph, dep_to_4lang, parser_wrapper)
@@ -353,9 +356,9 @@ class Lexicon:
                     if node not in self.lexicon:
                         node = node.lower()
                 node_ok = not filt
-                if black_or_white.lower() == "white" and d_node in whitelist:
+                if (black_or_white.lower() == "white" and d_node in whitelist) or depth <= apply_from_depth:
                     node_ok = True
-                elif black_or_white.lower() == "black" and node not in one_two_blacklist:
+                elif (black_or_white.lower() == "black" and node not in one_two_blacklist) or depth <= apply_from_depth:
                     node_ok = True
                 if node not in self.stopwords and node in self.lexicon and node_ok and node not in static_blacklist:
                     if node in self.expanded:
