@@ -330,7 +330,7 @@ class Lexicon:
                         depth-1, blacklist, filt, black_or_white, rarity, substituted)
 
     def expand(self, graph, dep_to_4lang, parser_wrapper, depth=1, blacklist=[], filt=True, black_or_white="white", apply_from_depth=None, rarity=False):
-        if not apply_from_depth:
+        if apply_from_depth == None:
             apply_from_depth = depth
 
         if depth == 0:
@@ -356,9 +356,9 @@ class Lexicon:
                     if node not in self.lexicon:
                         node = node.lower()
                 node_ok = not filt
-                if (black_or_white.lower() == "white" and d_node in whitelist) or depth <= apply_from_depth:
+                if (black_or_white.lower() == "white" and d_node in whitelist) or (depth > apply_from_depth):
                     node_ok = True
-                elif (black_or_white.lower() == "black" and node not in one_two_blacklist) or depth <= apply_from_depth:
+                elif (black_or_white.lower() == "black" and node not in one_two_blacklist) or (depth > apply_from_depth):
                     node_ok = True
                 if node not in self.stopwords and node in self.lexicon and node_ok and node not in static_blacklist:
                     if node in self.expanded:
@@ -380,7 +380,7 @@ class Lexicon:
                                 self.expanded[node] = def_graph
 
         self.expand(graph, dep_to_4lang, parser_wrapper,
-                    depth-1, blacklist, filt, black_or_white, rarity)
+                    depth-1, blacklist, filt, black_or_white, apply_from_depth, rarity)
 
     def expand_with_every_def(self, graph, dep_to_4lang, parser_wrapper, depth=1, blacklist=[], filt=True, black_or_white="white", rarity=False):
         if depth <= 0:

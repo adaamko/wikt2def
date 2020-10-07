@@ -60,7 +60,7 @@ class TextTo4lang():
                                                           blacklist=blacklist, filt=filt, black_or_white=black_or_white)
             else:
                 self.lexicon.expand(graph, self.dep_to_4lang, self.parser_wrapper,
-                                    depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white, rarity=rarity)
+                                    depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white, apply_from_depth=apply_from_depth, rarity=rarity)
         elif method == "substitute":
             self.lexicon.substitute(graph, self.dep_to_4lang, self.parser_wrapper,
                                     depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white, rarity=rarity)
@@ -83,7 +83,7 @@ class TextTo4lang():
                                                           blacklist=blacklist, filt=filt, black_or_white=black_or_white, rarity=rarity)
             else:
                 self.lexicon.expand(graph, self.dep_to_4lang, self.parser_wrapper,
-                                    depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white, rarity=rarity)
+                                    depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white, apply_from_depth=apply_from_depth, rarity=rarity)
         elif method == "substitute":
             self.lexicon.substitute(graph, self.dep_to_4lang, self.parser_wrapper,
                                     depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white, rarity=rarity)
@@ -117,7 +117,7 @@ class TextTo4lang():
         if method == "expand":
             if multi_definition:
                 return self.lexicon.expand_with_every_def(graph, self.dep_to_4lang, self.parser_wrapper, depth=depth,
-                                                          blacklist=blacklist, filt=filt, black_or_white=black_or_white, rarity=rarity)
+                                                          blacklist=blacklist, filt=filt, black_or_white=black_or_white, apply_from_depth=apply_from_depth, rarity=rarity)
             else:
                 self.lexicon.expand(graph, self.dep_to_4lang, self.parser_wrapper,
                                     depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white, rarity=rarity)
