@@ -29,7 +29,7 @@ class FourLang():
 
     def connect_edges(self, concept1, concept2, label):
         self.G.add_edge(concept1.unique_name(),
-                        concept2.unique_name(), color=label)
+                        concept2.unique_name(), color=int(label))
 
     def connect_synsets(self, synset_list):
         for synset in synset_list:
