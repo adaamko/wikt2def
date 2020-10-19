@@ -7,6 +7,10 @@ class UdParser():
         self.wrapper = ParserWrapper()
         self.wrapper.set_parser(language)
 
+    def parse_for_irtg(self, sentence):
+        doc = self.wrapper.nlp(sentence)
+        return doc.sentences[0]
+
     def parse(self, sentence):
         doc = self.wrapper.nlp(sentence)
         deps = doc.sentences[0].dependencies
@@ -25,8 +29,8 @@ class UdParser():
                     h = dep[0].lemma if dep[0].lemma is not None else dep[0].text
                     d = dep[2].lemma if dep[2].lemma is not None else dep[2].text
 
-                curr_dep.append([h, dep[0].index])
-                curr_dep.append([d, dep[2].index])
+                curr_dep.append([h, dep[0].id])
+                curr_dep.append([d, dep[2].id])
 
                 dep_list.append(curr_dep)
             sen_deps.append(dep_list)

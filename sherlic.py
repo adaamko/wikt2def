@@ -17,6 +17,7 @@ from tqdm import tqdm
 from fourlang.lexicon import Lexicon
 from fourlang.text_to_4lang import TextTo4lang
 from scripts.parse_data import build_graph, read_sherliic
+from nltk.corpus import stopwords as nltk_stopwords
 
 
 def clear_node(node):
@@ -27,6 +28,30 @@ def clear_node(node):
     """
     return re.sub(r'_[0-9][0-9]*', '', node)
 
+
+stopwords = set(nltk_stopwords.words("english"))
+
+def asim_jac_nodes(graph_premise, graph_hypothesis):
+    """
+    Asymmetric Jaccard similarity between the nodes of the definition graphs
+    :param graph_premise: the definition graph of the premise
+    :param graph_hypothesis: the definition graph of the hypothesis
+    :return: the ratio of overlapping nodes per the length of the hypothesis definition
+    """
+    prem = set([clear_node(node) for node in graph_premise.G.nodes])
+    hyp = set([clear_node(node) for node in graph_hypothesis.G.nodes])
+        
+    prem_cleared = [node for node in prem if node not in {"A", "B"}.union(stopwords)]
+    hyp_cleared = [node for node in hyp if node not in {"A", "B"}.union(stopwords)]
+    
+    prem = set(prem_cleared)
+    hyp = set(hyp_cleared)
+    
+    sim = hyp & prem
+    if not sim or len(hyp) == 0:
+        return 0
+    else:
+        return float(len(sim)) / len(hyp)
 
 def asim_jac_edges(graph_premise, graph_hypothesis):
     """
@@ -92,9 +117,10 @@ def connect_synsets(text_to_4lang, graph, synset_type, combine):
         graph.connect_synsets(synsets)
 
 
-def process(text_to_4lang, data_frame, synonyms, depth, threshold, combine, blacklist):
+def process(text_to_4lang, data_frame, synonyms, depth, threshold, combine, filt, apply_from_depth, nodes_or_edges, blacklist):
     preds = []
     guesses = []
+    filter_nodes = True if filt else False
     for i in tqdm(range(len(data_frame))):
         index = i
         premise = data_frame["premise"][index]
@@ -103,12 +129,24 @@ def process(text_to_4lang, data_frame, synonyms, depth, threshold, combine, blac
         graph_premise = text_to_4lang.process_deps(
             premise, method="expand", depth=0, blacklist=blacklist, filt=False, black_or_white="")
         connect_synsets(text_to_4lang, graph_premise, synonyms, combine)
-        graph_premise = text_to_4lang.process_graph(
-            graph_premise, method="expand", depth=depth, blacklist=blacklist, filt=False, black_or_white="")
+        if not filter_nodes:
+            graph_premise = text_to_4lang.process_graph(
+                graph_premise, method="expand", depth=depth, blacklist=blacklist, filt=False, black_or_white="")
 
-        graph_hypothesis = text_to_4lang.process_deps(
-            hypothesis, method="expand", depth=1, blacklist=blacklist, filt=False, black_or_white="")
-        pred = asim_jac_edges(graph_premise, graph_hypothesis)
+            graph_hypothesis = text_to_4lang.process_deps(
+                hypothesis, method="expand", depth=1, blacklist=blacklist, filt=False, black_or_white="")
+        else:
+            graph_premise = text_to_4lang.process_graph(
+                graph_premise, method="expand", depth=depth, blacklist=blacklist, filt=True, black_or_white=filt, apply_from_depth=apply_from_depth)
+
+            graph_hypothesis = text_to_4lang.process_deps(
+                hypothesis, method="expand", depth=1, blacklist=blacklist, filt=True, black_or_white=filt, apply_from_depth=apply_from_depth)
+        
+        if nodes_or_edges == "edges":
+            pred = asim_jac_edges(graph_premise, graph_hypothesis)
+        elif nodes_or_edges == "nodes":
+            pred = asim_jac_nodes(graph_premise, graph_hypothesis)
+
         guesses.append(pred)
         if pred >= threshold:
             preds.append(1)
@@ -118,7 +156,7 @@ def process(text_to_4lang, data_frame, synonyms, depth, threshold, combine, blac
     return preds
 
 
-def run(synonyms, depth, threshold, combine, dataset="dev", blacklist=["in", "of", "on"]):
+def run(synonyms, depth, threshold, combine, dataset="dev", filt=None, apply_from_depth=None, nodes_or_edges="edges", blacklist=["in", "of", "on"]):
     print("Initializng modules...")
     text_to_4lang = TextTo4lang(lang="en")
     if os.path.exists("sherlic_expanded"):
@@ -132,7 +170,7 @@ def run(synonyms, depth, threshold, combine, dataset="dev", blacklist=["in", "of
     data['hyp_text'] = data["hypo_argleft"] + " " + \
         data["hypothesis"] + " " + data["hypo_argright"]
     preds = process(text_to_4lang, data_frame, synonyms,
-                    depth, threshold, combine, blacklist)
+                    depth, threshold, combine, filt, apply_from_depth, nodes_or_edges, blacklist)
 
     bPrecis, bRecall, bFscore, bSupport = pr(data_frame.score.tolist(), preds)
 

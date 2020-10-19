@@ -39,6 +39,9 @@ class StanfordParser():
         corefs = []
         return deps["deps"], corefs, deps["doc"]
 
+    def parse_text_for_irtg(self, text):
+        return self.parser.parse_for_irtg(text)
+
     def load_from_dict(self):
         with open("def_parses", "r") as f:
             self.parse = json.load(f)

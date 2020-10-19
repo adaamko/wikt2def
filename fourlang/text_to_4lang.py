@@ -10,8 +10,12 @@ from .dep_to_4lang import DepTo4lang
 from .stanford_wrapper import StanfordParser
 from .lexicon import Lexicon
 from .utils import dep_to_dot
+from .fourlang import FourLang
 from .grammars.ud_to_fourlang import UdToFourlang
 from networkx.readwrite import json_graph
+
+from tuw_nlp.grammar.ud_fl import UD_Fourlang
+from tuw_nlp.graph.utils import read_alto_output
 
 __LOGLEVEL__ = 'INFO'
 __MACHINE_LOGLEVEL__ = 'INFO'
@@ -25,6 +29,8 @@ class TextTo4lang():
         self.dep_to_4lang = DepTo4lang()
         self.lexicon = Lexicon(lang)
         self.ud_to_fourlang = UdToFourlang()
+        self.ud_fl = UD_Fourlang()
+
 
     def get_definition(self, word):
         if word in self.lexicon.lexicon:
@@ -100,6 +106,16 @@ class TextTo4lang():
         dot_deps = dep_to_dot(deps)
 
         return dot_deps
+
+
+    def process_text_with_IRTG(self, text):
+        sen = self.parser_wrapper.parse_text_for_irtg(text)
+        fl = self.ud_fl.parse(sen, 'ud', 'fourlang', 'amr-sgraph-src')
+        output = read_alto_output(fl)
+        graph = FourLang()
+        graph.G = output
+
+        return graph
 
     def process_text(self, text, method="default", depth=1, blacklist=[], filt=True, multi_definition=False, black_or_white="white", apply_from_depth=None, rarity=False):
         logging.info("parsing text...")

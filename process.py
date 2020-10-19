@@ -27,11 +27,15 @@ def main(config_path):
         combine = config["sherlic"]["CombineSynonyms"]
         dataset = config["sherlic"]["dataset"]
 
+        filt = config["sherlic"]["filter"] if "filter" in config["sherlic"] else None
+        nodes_or_edges = config["sherlic"]["nodes_or_edges"] if "nodes_or_edges" in config["sherlic"] else "edges"
+        apply_from_depth = int(config["sherlic"]["apply_from_depth"]) if "apply_from_depth" in config["sherlic"] else None
+
         if "blacklist" in config["sherlic"]:
             blacklist = config["sherlic"]["blacklist"].split(",")
-            sherlic.run(synonyms, depth, threshold, combine, dataset, blacklist)
+            sherlic.run(synonyms, depth, threshold, combine, dataset, filt, apply_from_depth, nodes_or_edges, blacklist)
         else:
-            sherlic.run(synonyms, depth, threshold, combine, dataset)
+            sherlic.run(synonyms, depth, threshold, combine, dataset, filt, apply_from_depth, nodes_or_edges)
     elif "semeval" in config:
         synonyms = config["semeval"]["synonyms"]
         filtering = config["semeval"]["filtering"]

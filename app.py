@@ -39,6 +39,10 @@ def main():
         st.graphviz_chart(dot, use_container_width=True)
         st.graphviz_chart(ud_graph, use_container_width=True)
 
+
+        irtg_graph = fourlang_en.process_text_with_IRTG(sentence)
+        st.graphviz_chart(irtg_graph.to_dot())
+
     if word:
         definition = fourlang_en.get_longman_definition(word)
         if definition:

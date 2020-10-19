@@ -2,5 +2,9 @@
 synonyms = wiktionary
 depth = 3
 CombineSynonyms = OR
-threshold = 0.1
-dataset = test
+threshold = 0.8
+dataset = dev
+filt = black
+apply_from_depth = 3
+nodes_or_edges = nodes
+

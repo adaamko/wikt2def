@@ -308,20 +308,20 @@ class UdToFourlang():
 
     def get_word_index(self, sen):
         word_index = {
-            int(word.index): (
+            int(word.id): (
                 self.preprocess_word_for_alto(
                     word.text), self.preprocess_word_for_alto(word.lemma),
                 word.upos, [])
             for word in sen.words}
         root_index = None
         for word in sen.words:
-            if word.governor == 0:
+            if word.head == 0:
                 assert root_index is None, 'multiple root elements!'
-                root_index = int(word.index)
+                root_index = int(word.id)
             else:
-                word_index[word.governor][-1].append((
-                    word.dependency_relation.replace(':', '_').upper(),
-                    int(word.index)))
+                word_index[word.head][-1].append((
+                    word.deprel.replace(':', '_').upper(),
+                    int(word.id)))
 
         assert root_index, 'no root element!'
         return word_index, root_index
