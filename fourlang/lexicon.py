@@ -37,8 +37,8 @@ def ud_to_nx(ud):
     for dep in iter_ud:
         for dependency in dep:
             t = dependency[0]
-            sender = "_".join(dependency[1])
-            receiver = "_".join(dependency[2])
+            sender = "_".join([str(i) for i in dependency[1]])
+            receiver = "_".join([str(i) for i in dependency[2]])
             if sender not in nodes:
                 G.add_node(sender)
                 nodes.add(sender)
@@ -329,7 +329,7 @@ class Lexicon:
         self.substitute(graph, dep_to_4lang, parser_wrapper,
                         depth-1, blacklist, filt, black_or_white, rarity, substituted)
 
-    def expand(self, graph, dep_to_4lang, parser_wrapper, depth=1, blacklist=[], filt=True, black_or_white="white", apply_from_depth=None, rarity=False):
+    def expand(self, graph, dep_to_4lang, parser_wrapper, depth=1, blacklist=[], filt=True, black_or_white="white", apply_from_depth=None, irtg_parser=False, rarity=False):
         if apply_from_depth == None:
             apply_from_depth = depth
 
@@ -367,20 +367,26 @@ class Lexicon:
                     else:
                         definition = self.lexicon[node]
                         if definition:
-                            parse = parser_wrapper.parse_text(definition, node)
-                            deps = filter_graph(parse[0], blacklist)
-                            corefs = parse[1]
-                            ud_G = ud_to_nx(deps)
-                            #filter_ud(ud_G, blacklist)
-                            deps = nx_to_ud(ud_G)
-                            if len(deps[0]) > 0:
-                                def_graph = dep_to_4lang.get_machines_from_deps_and_corefs(
-                                    deps, corefs)
-                                graph.merge_definition_graph(def_graph, d_node)
-                                self.expanded[node] = def_graph
+                            if irtg_parser:
+                                def_graph = irtg_parser(definition)
+                                if len(def_graph.get_nodes()) > 0:
+                                    graph.merge_definition_graph(def_graph, d_node)
+                                    self.expanded[node] = def_graph
+                            else:
+                                parse = parser_wrapper.parse_text(definition, node)
+                                deps = filter_graph(parse[0], blacklist)
+                                corefs = parse[1]
+                                ud_G = ud_to_nx(deps)
+                                #filter_ud(ud_G, blacklist)
+                                deps = nx_to_ud(ud_G)
+                                if len(deps[0]) > 0:
+                                    def_graph = dep_to_4lang.get_machines_from_deps_and_corefs(
+                                        deps, corefs)
+                                    graph.merge_definition_graph(def_graph, d_node)
+                                    self.expanded[node] = def_graph
 
         self.expand(graph, dep_to_4lang, parser_wrapper,
-                    depth-1, blacklist, filt, black_or_white, apply_from_depth, rarity)
+                    depth-1, blacklist, filt, black_or_white, apply_from_depth, irtg_parser, rarity)
 
     def expand_with_every_def(self, graph, dep_to_4lang, parser_wrapper, depth=1, blacklist=[], filt=True, black_or_white="white", rarity=False):
         if depth <= 0:

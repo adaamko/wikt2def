@@ -31,13 +31,12 @@ class TextTo4lang():
         self.ud_to_fourlang = UdToFourlang()
         self.ud_fl = UD_Fourlang()
 
-
     def get_definition(self, word):
         if word in self.lexicon.lexicon:
             return self.lexicon.lexicon[word]
         else:
             return None
-    
+
     def get_longman_definition(self, word):
         if word in self.lexicon.longman_definitions:
             return self.lexicon.longman_definitions[word]["senses"][0]["definition"]["sen"]
@@ -59,37 +58,35 @@ class TextTo4lang():
         t = t.strip()
         return t
 
-    def process_graph(self, graph, method="expand", depth=1, blacklist=[], filt=True, multi_definition=False, black_or_white="white", apply_from_depth=None, rarity=False):
+    def process_graph(self, graph, method="expand", depth=1, blacklist=[], filt=True, multi_definition=False, black_or_white="white", apply_from_depth=None, irtg=False, rarity=False):
         if method == "expand":
-            if multi_definition:
-                return self.lexicon.expand_with_every_def(graph, self.dep_to_4lang, self.parser_wrapper, depth=depth,
-                                                          blacklist=blacklist, filt=filt, black_or_white=black_or_white)
-            else:
-                self.lexicon.expand(graph, self.dep_to_4lang, self.parser_wrapper,
-                                    depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white, apply_from_depth=apply_from_depth, rarity=rarity)
+            irtg_parser = None
+            if irtg:
+                irtg_parser = self.process_text_with_IRTG
+            self.lexicon.expand(graph, self.dep_to_4lang, self.parser_wrapper,
+                                depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white, apply_from_depth=apply_from_depth, irtg_parser=irtg_parser, rarity=rarity)
         elif method == "substitute":
             self.lexicon.substitute(graph, self.dep_to_4lang, self.parser_wrapper,
                                     depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white, rarity=rarity)
 
         return graph
 
-
-    def process_deps(self, deps,  method="default", depth=1, blacklist=[], filt=True, multi_definition=False, black_or_white="white", apply_from_depth=None, rarity=False):
+    def process_deps(self, deps,  method="default", depth=1, blacklist=[], filt=True, multi_definition=False, black_or_white="white", apply_from_depth=None, irtg=False, rarity=False):
         corefs = []
         if "root" not in [d[0] for d in deps[0]]:
-            unique, counts = np.unique(np.array([d[1] for d in deps[0]]), axis=0, return_counts=True)
+            unique, counts = np.unique(
+                np.array([d[1] for d in deps[0]]), axis=0, return_counts=True)
             index = np.argmax(counts)
             deps[0].append(["root", ["ROOT", -1], unique[index].tolist()])
         graph = self.dep_to_4lang.get_machines_from_deps_and_corefs(
             deps, corefs)
 
         if method == "expand":
-            if multi_definition:
-                return self.lexicon.expand_with_every_def(graph, self.dep_to_4lang, self.parser_wrapper, depth=depth,
-                                                          blacklist=blacklist, filt=filt, black_or_white=black_or_white, rarity=rarity)
-            else:
-                self.lexicon.expand(graph, self.dep_to_4lang, self.parser_wrapper,
-                                    depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white, apply_from_depth=apply_from_depth, rarity=rarity)
+            irtg_parser = None
+            if irtg:
+                irtg_parser = self.process_text_with_IRTG
+            self.lexicon.expand(graph, self.dep_to_4lang, self.parser_wrapper,
+                                depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white, apply_from_depth=apply_from_depth, irtg_parser=irtg_parser, rarity=rarity)
         elif method == "substitute":
             self.lexicon.substitute(graph, self.dep_to_4lang, self.parser_wrapper,
                                     depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white, rarity=rarity)
@@ -107,39 +104,40 @@ class TextTo4lang():
 
         return dot_deps
 
-
     def process_text_with_IRTG(self, text):
         sen = self.parser_wrapper.parse_text_for_irtg(text)
         fl = self.ud_fl.parse(sen, 'ud', 'fourlang', 'amr-sgraph-src')
-        output = read_alto_output(fl)
+        output, root = read_alto_output(fl)
         graph = FourLang()
         graph.G = output
+        graph.root = root
 
         return graph
 
-    def process_text(self, text, method="default", depth=1, blacklist=[], filt=True, multi_definition=False, black_or_white="white", apply_from_depth=None, rarity=False):
+    def process_text(self, text, method="default", depth=1, blacklist=[], filt=True, multi_definition=False, black_or_white="white", apply_from_depth=None, irtg=False, rarity=False):
         logging.info("parsing text...")
-        preproc_sens = []
-        preproc_line = self.preprocess_text(str(text).strip())
-        preproc_sens.append(preproc_line)
-        parse = self.parser_wrapper.parse_text("\n".join(preproc_sens))
-        deps = parse[0]
-        corefs = parse[1]
+        if not irtg:
+            preproc_sens = []
+            preproc_line = self.preprocess_text(str(text).strip())
+            preproc_sens.append(preproc_line)
+            parse = self.parser_wrapper.parse_text("\n".join(preproc_sens))
+            deps = parse[0]
+            corefs = parse[1]
 
-        self.ud_to_fourlang.ud_to_irtg(parse[2])
-        graph = self.dep_to_4lang.get_machines_from_deps_and_corefs(
-            deps, corefs)
+            graph = self.dep_to_4lang.get_machines_from_deps_and_corefs(
+                deps, corefs)
+        else:
+            graph = self.process_text_with_IRTG(text)
 
         if method == "expand":
-            if multi_definition:
-                return self.lexicon.expand_with_every_def(graph, self.dep_to_4lang, self.parser_wrapper, depth=depth,
-                                                          blacklist=blacklist, filt=filt, black_or_white=black_or_white, apply_from_depth=apply_from_depth, rarity=rarity)
-            else:
-                self.lexicon.expand(graph, self.dep_to_4lang, self.parser_wrapper,
-                                    depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white, rarity=rarity)
+            irtg_parser = None
+            if irtg:
+                irtg_parser = self.process_text_with_IRTG
+            self.lexicon.expand(graph, self.dep_to_4lang, self.parser_wrapper,
+                                depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white, irtg_parser=irtg_parser, rarity=rarity)
         elif method == "substitute":
             self.lexicon.substitute(
-                graph, self.dep_to_4lang, self.parser_wrapper, depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white,rarity=rarity, substituted=[])
+                graph, self.dep_to_4lang, self.parser_wrapper, depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white, rarity=rarity, substituted=[])
 
         return graph
 
