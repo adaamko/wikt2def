@@ -110,12 +110,16 @@ class TextTo4lang():
         return dot_deps
 
     def process_text_with_IRTG(self, text):
+        fl = None
         if text in self.irtg_parse:
             fl = self.irtg_parse[text]
         else:
-            sen = self.parser_wrapper.parse_text_for_irtg(text)
-            fl = self.ud_fl.parse(sen, 'ud', 'fourlang', 'amr-sgraph-src')
-            self.irtg_parse[text] = fl
+            try:
+                sen = self.parser_wrapper.parse_text_for_irtg(text)
+                fl = self.ud_fl.parse(sen, 'ud', 'fourlang', 'amr-sgraph-src')
+                self.irtg_parse[text] = fl
+            except IndexError as e:
+                print(e)
 
         output, root = None, None
         if fl:

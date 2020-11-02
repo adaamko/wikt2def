@@ -172,7 +172,7 @@ class Lexicon:
                     if defi.strip() != word:
                         def_splitted = defi.strip().split(";")
                         for def_split in def_splitted:
-                            if def_split not in self.lexicon_list[word]:
+                            if (def_split not in self.lexicon_list[word]) and len(self.lexicon_list[word]) < 12:
                                 self.lexicon_list[word].append(def_split)
 
     def parse_definition(self, defi):
