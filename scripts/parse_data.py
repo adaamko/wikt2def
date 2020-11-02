@@ -88,8 +88,8 @@ def build_graph(df):
 def read_sherliic(path_to_data, ud_path=None, keep_context=False, just_ab=True):
     abs_path = os.path.abspath(path_to_data)
     sherliic_data = pd.read_csv(abs_path, delimiter=",",
-                                usecols=["premise_relation", "prem_argleft", "prem_middle", "prem_argright",
-                                         "hypothesis_relation", "hypo_argleft", "hypo_middle", "hypo_argright",
+                                usecols=["premise_relation", "prem_argleft", "prem_middle", "prem_argright", "prem_end",
+                                         "hypothesis_relation", "hypo_argleft", "hypo_middle", "hypo_argright", "hypo_end",
                                          "is_entailment"])
     if not ud_path:
         sherliic_data = sherliic_data.drop(columns=["premise_relation", "hypothesis_relation"])

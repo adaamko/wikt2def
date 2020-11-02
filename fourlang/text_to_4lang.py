@@ -30,6 +30,7 @@ class TextTo4lang():
         self.lexicon = Lexicon(lang)
         self.ud_to_fourlang = UdToFourlang()
         self.ud_fl = UD_Fourlang()
+        self.irtg_parse = {}
 
     def get_definition(self, word):
         if word in self.lexicon.lexicon:
@@ -109,8 +110,13 @@ class TextTo4lang():
         return dot_deps
 
     def process_text_with_IRTG(self, text):
-        sen = self.parser_wrapper.parse_text_for_irtg(text)
-        fl = self.ud_fl.parse(sen, 'ud', 'fourlang', 'amr-sgraph-src')
+        if text in self.irtg_parse:
+            fl = self.irtg_parse[text]
+        else:
+            sen = self.parser_wrapper.parse_text_for_irtg(text)
+            fl = self.ud_fl.parse(sen, 'ud', 'fourlang', 'amr-sgraph-src')
+            self.irtg_parse[text] = fl
+
         output, root = None, None
         if fl:
             output, root = read_alto_output(fl)
@@ -141,8 +147,12 @@ class TextTo4lang():
             irtg_parser = None
             if irtg:
                 irtg_parser = self.process_text_with_IRTG
-            self.lexicon.expand(graph, self.dep_to_4lang, self.parser_wrapper,
-                                depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white, irtg_parser=irtg_parser, rarity=rarity)
+            if multi_definition:
+                self.lexicon.expand_with_every_def(graph, self.dep_to_4lang, self.parser_wrapper,
+                                depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white, apply_from_depth=apply_from_depth, irtg_parser=irtg_parser, rarity=rarity)
+            else:
+                self.lexicon.expand(graph, self.dep_to_4lang, self.parser_wrapper,
+                                depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white, apply_from_depth=apply_from_depth, irtg_parser=irtg_parser, rarity=rarity)
         elif method == "substitute":
             self.lexicon.substitute(
                 graph, self.dep_to_4lang, self.parser_wrapper, depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white, rarity=rarity, substituted=[])
