@@ -18,6 +18,7 @@ class FourLang():
     def __init__(self):
         self.G = nx.MultiDiGraph()
         self.root = None
+        self.expanded = False
 
     def add_node(self, concept):
         if concept.printname != "ROOT":
@@ -76,6 +77,10 @@ class FourLang():
         self.G = F
         if attrs:
             nx.set_node_attributes(self.G, attrs)
+
+    def merge(self, graph):
+        F = nx.compose(self.G, graph.G)
+        self.G = F
 
     def d_clean(self, string):
         s = string
@@ -162,3 +167,4 @@ class FourLang():
         lines += sorted(edge_lines)
         lines.append('}')
         return u'\n'.join(lines)
+
