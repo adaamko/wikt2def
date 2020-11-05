@@ -35,7 +35,7 @@ def build():
         text = data["text"]
         method = data["method"]
         depth = data["depth"]
-        irtg_graph = text_to_4lang_en.process_text(text, method=method, depth=int(depth), filt=True, black_or_white="black")
+        irtg_graph = text_to_4lang_en.process_text(text, method=method, depth=int(depth), filt=False, black_or_white="")
 
         if irtg_graph:
             ret_value["result"]["graph"] = irtg_graph.to_dot()

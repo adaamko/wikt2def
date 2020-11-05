@@ -312,9 +312,8 @@ class Lexicon:
                         def_graph = self.reduced[node]
                         graph.merge_definition_graph(
                             def_graph, d_node, substitute=True)
-                    else:
-                        if node in self.longman_definitions:
-                            definition = self.lexicon[node]
+                    else:                      
+                        definition = self.lexicon[node]
                         if definition:
 
                             def_graph = irtg_parser(definition)
