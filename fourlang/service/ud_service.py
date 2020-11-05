@@ -3,7 +3,7 @@ import argparse
 from flask import Flask
 from flask import request
 from flask import jsonify
-from parser_wrapper import ParserWrapper
+from fourlang.service.parser_wrapper import ParserWrapper
 
 parser = argparse.ArgumentParser(description = "")
 parser.add_argument("-p", "--port", required=True, nargs="+", help="set port for the service", default=5005, type=int)

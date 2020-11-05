@@ -1,6 +1,5 @@
 from collections import defaultdict
-from .dependency_processor import DependencyProcessor
-from .concept import Concept
+from fourlang.concept import Concept
 
 import networkx as nx
 import json

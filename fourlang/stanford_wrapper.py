@@ -4,7 +4,8 @@ import sys
 import requests
 import json
 import networkx as nx
-from .service.ud_parser import UdParser
+
+from fourlang.service.ud_parser import UdParser
 
 
 class StanfordParser():

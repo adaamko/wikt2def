@@ -6,12 +6,10 @@ import sys
 import argparse
 import numpy as np
 
-from .dep_to_4lang import DepTo4lang
-from .stanford_wrapper import StanfordParser
-from .lexicon import Lexicon
-from .utils import dep_to_dot
-from .fourlang import FourLang
-from .grammars.ud_to_fourlang import UdToFourlang
+from fourlang.stanford_wrapper import StanfordParser
+from fourlang.lexicon import Lexicon
+from fourlang.utils import dep_to_dot
+from fourlang.fourlang import FourLang
 from networkx.readwrite import json_graph
 
 from tuw_nlp.grammar.ud_fl import UD_Fourlang
@@ -26,9 +24,7 @@ class TextTo4lang():
 
     def __init__(self, lang, serverless=True, port=5005):
         self.parser_wrapper = StanfordParser(lang, serverless, port)
-        self.dep_to_4lang = DepTo4lang()
         self.lexicon = Lexicon(lang)
-        self.ud_to_fourlang = UdToFourlang()
         self.ud_fl = UD_Fourlang()
         self.irtg_parse = {}
 
@@ -59,42 +55,13 @@ class TextTo4lang():
         t = t.strip()
         return t
 
-    def process_graph(self, graph, method="expand", depth=1, blacklist=[], filt=True, multi_definition=False, black_or_white="white", apply_from_depth=None, irtg=False, rarity=False):
+    def process_graph(self, graph, method="expand", depth=1, blacklist=[], filt=True, multi_definition=False, black_or_white="white", apply_from_depth=None):
         if method == "expand":
-            irtg_parser = None
-            if irtg:
-                irtg_parser = self.process_text_with_IRTG
-            self.lexicon.expand(graph, self.dep_to_4lang, self.parser_wrapper,
-                                depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white, apply_from_depth=apply_from_depth, irtg_parser=irtg_parser, rarity=rarity)
+            self.lexicon.expand(graph, irtg_parser=self.process_text_with_IRTG,
+                                depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white, apply_from_depth=apply_from_depth)
         elif method == "substitute":
-            self.lexicon.substitute(graph, self.dep_to_4lang, self.parser_wrapper,
-                                    depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white, rarity=rarity)
-
-        return graph
-
-    def process_deps(self, deps,  method="default", depth=1, blacklist=[], filt=True, multi_definition=False, black_or_white="white", apply_from_depth=None, irtg=False, rarity=False):
-        corefs = []
-        if "root" not in [d[0] for d in deps[0]]:
-            unique, counts = np.unique(
-                np.array([d[1] for d in deps[0]]), axis=0, return_counts=True)
-            index = np.argmax(counts)
-            deps[0].append(["root", ["ROOT", -1], unique[index].tolist()])
-        graph = self.dep_to_4lang.get_machines_from_deps_and_corefs(
-            deps, corefs)
-
-        if method == "expand":
-            irtg_parser = None
-            if irtg:
-                irtg_parser = self.process_text_with_IRTG
-            if multi_definition:
-                self.lexicon.expand_with_every_def(graph, self.dep_to_4lang, self.parser_wrapper,
-                                depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white, apply_from_depth=apply_from_depth, irtg_parser=irtg_parser, rarity=rarity)
-            else:
-                self.lexicon.expand(graph, self.dep_to_4lang, self.parser_wrapper,
-                                depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white, apply_from_depth=apply_from_depth, irtg_parser=irtg_parser, rarity=rarity)
-        elif method == "substitute":
-            self.lexicon.substitute(graph, self.dep_to_4lang, self.parser_wrapper,
-                                    depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white, rarity=rarity)
+            self.lexicon.substitute(graph,
+                                    depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white, apply_from_depth=apply_from_depth, irtg_parser=self.process_text_with_IRTG, rarity=rarity)
 
         return graph
 
@@ -109,7 +76,7 @@ class TextTo4lang():
 
         return dot_deps
 
-    def process_text_with_IRTG(self, text):
+    def parse_irtg(self, text):
         fl = None
         if text in self.irtg_parse:
             fl = self.irtg_parse[text]
@@ -120,6 +87,11 @@ class TextTo4lang():
                 self.irtg_parse[text] = fl
             except IndexError as e:
                 print(e)
+
+        return fl
+
+    def process_text_with_IRTG(self, text):
+        fl = self.parse_irtg(text)
 
         output, root = None, None
         if fl:
@@ -132,86 +104,23 @@ class TextTo4lang():
 
         return graph
 
-    def process_text(self, text, method="default", depth=1, blacklist=[], filt=True, multi_definition=False, black_or_white="white", apply_from_depth=None, irtg=False, rarity=False):
+    def process_text(self, text, method="default", depth=1, blacklist=[], filt=True, multi_definition=False, black_or_white="white", apply_from_depth=None, rarity=False):
         logging.info("parsing text...")
-        if not irtg:
-            preproc_sens = []
-            preproc_line = self.preprocess_text(str(text).strip())
-            preproc_sens.append(preproc_line)
-            parse = self.parser_wrapper.parse_text("\n".join(preproc_sens))
-            deps = parse[0]
-            corefs = parse[1]
 
-            graph = self.dep_to_4lang.get_machines_from_deps_and_corefs(
-                deps, corefs)
-        else:
-            graph = self.process_text_with_IRTG(text)
+        graph = self.process_text_with_IRTG(text)
 
         if method == "expand":
-            irtg_parser = None
-            if irtg:
-                irtg_parser = self.process_text_with_IRTG
             if multi_definition:
-                self.lexicon.expand_with_every_def(graph, self.dep_to_4lang, self.parser_wrapper,
-                                depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white, apply_from_depth=apply_from_depth, irtg_parser=irtg_parser, rarity=rarity)
+                self.lexicon.expand_with_every_def(graph, irtg_parser=self.process_text_with_IRTG,
+                                                   depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white, apply_from_depth=apply_from_depth)
             else:
-                self.lexicon.expand(graph, self.dep_to_4lang, self.parser_wrapper,
-                                depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white, apply_from_depth=apply_from_depth, irtg_parser=irtg_parser, rarity=rarity)
+                self.lexicon.expand(graph, irtg_parser=self.process_text_with_IRTG,
+                                    depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white, apply_from_depth=apply_from_depth)
         elif method == "substitute":
             self.lexicon.substitute(
-                graph, self.dep_to_4lang, self.parser_wrapper, depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white, rarity=rarity, substituted=[])
+                graph, irtg_parser=self.process_text_with_IRTG, depth=depth, blacklist=blacklist, filt=filt, black_or_white=black_or_white, apply_from_depth=apply_from_depth, substituted=[])
 
         return graph
-
-    def process_file(self, fn, out_fn):
-        graphs = None
-        if not os.path.exists(fn):
-            logging.info('file not exists: {0}, not parsing'.format(fn))
-        elif not os.path.exists(out_fn):
-            logging.info(
-                'out directory not exists: {0}, not parsing'.format(out_fn))
-        else:
-            deps_fn = self.parse_file(fn, out_fn)
-            graphs = self.process_deps_complex(deps_fn)
-
-        return graphs
-
-    def parse_file(self, fn, out_fn):
-        logging.info("parsing file: {0}".format(fn))
-        preproc_sens = []
-
-        with open(fn, "r", encoding="utf-8") as f:
-            for line in f:
-                if not line:
-                    continue
-                preproc_line = self.preprocess_text(line.strip())
-                preproc_sens.append(preproc_line)
-
-        parse = self.parser_wrapper.parse_text("\n".join(preproc_sens))
-        deps = parse[0]
-        corefs = parse[1]
-        deps_fn = os.path.join(out_fn, "dependencies.json")
-        with open(deps_fn, 'w') as out_f:
-            out_f.write("{0}\n".format(json.dumps({
-                "deps": deps,
-                "corefs": corefs})))
-        logging.info("parsed {0} sentences".format(len(deps)))
-
-        return deps_fn
-
-    def process_deps_complex(self, fn):
-        sen_graphs = []
-        for line in open(fn):
-            data = json.loads(line)
-            deps, corefs = data['deps'], data['corefs']
-            logging.info("processing sentences...")
-            graph = self.dep_to_4lang.get_machines_from_deps_and_corefs(
-                deps, corefs)
-            self.dep_to_4lang.lexicon.expand(graph)
-
-            sen_graphs.append(graph)
-
-        return sen_graphs
 
 
 def main(input_file, output_dir):

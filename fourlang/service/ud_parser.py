@@ -1,4 +1,4 @@
-from .parser_wrapper import ParserWrapper
+from fourlang.service.parser_wrapper import ParserWrapper
 
 
 class UdParser():
