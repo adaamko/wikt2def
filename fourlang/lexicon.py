@@ -364,13 +364,14 @@ class Lexicon:
                         def_graph = self.expanded[node]
                         graph.merge_definition_graph(def_graph, d_node)
                     else:
-                        definition = self.lexicon[node]
-                        if definition:
-                            def_graph = irtg_parser(definition)
-                            if len(def_graph.get_nodes()) > 0:
-                                graph.merge_definition_graph(
-                                    def_graph, d_node)
-                                self.expanded[node] = def_graph
+                        for definition in self.lexicon_list[node]:
+                            if definition:
+                                def_graph = irtg_parser(definition)
+                                if len(def_graph.get_nodes()) > 0:
+                                    graph.merge_definition_graph(
+                                        def_graph, d_node)
+                                    self.expanded[node] = def_graph
+                                    break
 
         self.expand(graph, irtg_parser,
                     depth-1, blacklist, filt, black_or_white, apply_from_depth)
