@@ -4,9 +4,12 @@ import logging
 import os
 import pickle
 import re
+import copy
+
 from collections import defaultdict
 from statistics import mean
 from fourlang.fourlang import FourLang
+from itertools import product
 
 import networkx as nx
 from networkx import algorithms
@@ -34,7 +37,7 @@ def ud_to_nx(ud):
     G = nx.MultiDiGraph()
     nodes = set()
     iter_ud = ud if len(ud[0]) < 3 else [ud[0]]
-    #iter_ud = [ud[0]]
+    # iter_ud = [ud[0]]
     for dep in iter_ud:
         for dependency in dep:
             t = dependency[0]
@@ -167,7 +170,8 @@ class Lexicon:
                     defi = line[2].strip().strip("\n")
                     defi = self.parse_definition(defi)
                     if line[0].strip() not in self.lexicon:
-                        self.lexicon[word] = defi.strip()
+                        def_splitted = defi.strip().split(";")[0]
+                        self.lexicon[word] = def_splitted
                         self.lexicon_list[word] = []
                     if defi.strip() != word:
                         def_splitted = defi.strip().split(";")
@@ -261,7 +265,7 @@ class Lexicon:
         for adj in graph.G._adj.values():
             # print(adj)
             for a in adj.items():
-                #print(f"adj: {a[1]}")
+                # print(f"adj: {a[1]}")
                 if {'color': 2} in a[1].values():
                     new_blacklist_item = a[0]
                     for node in graph.G.nodes:
@@ -375,6 +379,73 @@ class Lexicon:
 
         self.expand(graph, irtg_parser,
                     depth-1, blacklist, filt, black_or_white, apply_from_depth)
+                            
+    def save_expanded(self, path):
+        with open(path, 'wb') as handle:
+            pickle.dump(self.expanded, handle,
+                        protocol=pickle.HIGHEST_PROTOCOL)
+
+    def load_expanded(self, path):
+        with open(path, 'rb') as handle:
+            self.expanded = pickle.load(handle)
+
+    def substitute_hypothesis_with_every_def(self, graph, irtg_parser):
+        graphs_expanded = []
+        graphs_substituted = []
+
+        static_blacklist = ["a", "A", "b", "B"]
+
+        nodes = [node for node in graph.G.nodes(data=True)]
+        node_lengths = []
+        node_graphs = []
+        d_nodes = []
+
+        for d_node, node_data in nodes:
+            node = graph.d_clean(d_node).split('_')[0]
+            if node not in self.lexicon:
+                node = node.lower()
+            if self.lang == "de":
+                node = node.capitalize()
+                if node not in self.lexicon:
+                    node = node.lower()
+
+            if node not in self.stopwords and node in self.lexicon_list and node not in static_blacklist:
+                node_lengths.append(len(self.lexicon_list[node]))
+                d_nodes.append(d_node)
+                if node in self.expanded_with_every_def:
+                    def_graphs = self.expanded_with_every_def[node]
+                    node_graphs.append(def_graphs)
+
+                else:
+                    definitions = self.lexicon_list[node]
+                    if definitions:
+                        concrete_definitions = definitions.copy()
+                        irtgs = []
+                        for definition in concrete_definitions:
+                            if irtg_parser:
+                                irtg_graph = irtg_parser(definition)
+                                self.expanded_with_every_def[node].append(
+                                    irtg_graph)
+                                irtgs.append(irtg_graph)
+
+                        node_graphs.append(irtgs)
+
+        node_defs = [list(range(i)) for i in node_lengths]
+
+        for combined in product(*node_defs):
+            copy_graph_expanded = copy.deepcopy(graph)
+            copy_graph_substituted = copy.deepcopy(graph)
+            for i, comb in enumerate(combined):
+                if node_graphs[i][comb]:
+                    copy_graph_expanded.merge_definition_graph(
+                        node_graphs[i][comb], d_nodes[i])
+                    copy_graph_substituted.merge_definition_graph(
+                        node_graphs[i][comb], d_nodes[i], substitute=True)
+
+            graphs_expanded.append(copy_graph_expanded)
+            graphs_substituted.append(copy_graph_substituted)
+
+        return graphs_expanded + graphs_substituted
 
     def expand_with_every_def(self, graph, irtg_parser, depth=1, blacklist=[], filt=True, black_or_white="white", apply_from_depth=None):
         if depth == 0:
@@ -413,25 +484,17 @@ class Lexicon:
                     else:
                         definitions = self.lexicon_list[node]
                         if definitions:
-                            concrete_definitions = definitions.copy() if not graph.expanded else [
-                                definitions[0]]
+                            concrete_definitions = definitions.copy()
                             for definition in concrete_definitions:
-                                irtg_graph = irtg_parser(definition)
-                                if len(irtg_graph.get_nodes()) > 0:
+                                if irtg_parser:
+                                    irtg_graph = irtg_parser(definition)
                                     graph.merge_definition_graph(
                                         irtg_graph, d_node)
                                     self.expanded_with_every_def[node].append(
                                         irtg_graph)
 
-        graph.expanded = True
-        self.expand_with_every_def(graph, irtg_parser,
+        self.expand(graph, irtg_parser,
                                    depth-1, blacklist, filt, black_or_white, apply_from_depth)
 
-    def save_expanded(self, path):
-        with open(path, 'wb') as handle:
-            pickle.dump(self.expanded, handle,
-                        protocol=pickle.HIGHEST_PROTOCOL)
 
-    def load_expanded(self, path):
-        with open(path, 'rb') as handle:
-            self.expanded = pickle.load(handle)
+
