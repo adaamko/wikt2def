@@ -8,8 +8,8 @@ import copy
 
 from collections import defaultdict
 from statistics import mean
+from fourlang.fourlang import FourLang
 from itertools import product
-from .fourlang import FourLang
 
 import networkx as nx
 from networkx import algorithms
@@ -280,35 +280,13 @@ class Lexicon:
                             new_blacklist_item.split('_')[0])
         return one_two_blacklist
 
-    def rarity_check(self, graph, dep_to_4lang, parser_wrapper):
-        nodes = [node for node in graph.G.nodes(data=True)]
-        for d_node, node_data in nodes:
-            if "expanded" not in node_data:
-                node = graph.d_clean(d_node).split('_')[0]
-                if node not in self.lexicon:
-                    node = node.lower()
+    def substitute(self, graph, irtg_parser, depth=1, blacklist=[], filt=True, black_or_white="white", apply_from_depth=None, substituted=[]):
+        if depth == 0:
+            return
+        
+        if apply_from_depth == None:
+            apply_from_depth = depth
 
-                if node not in self.stopwords and node in self.lexicon:
-                    # if node not in self.freq_words or self.freq_words[node] < 100000:
-                    if node in self.expanded:
-                        def_graph = self.expanded[node]
-                        graph.merge_definition_graph(def_graph, d_node)
-                    else:
-                        definition = self.lexicon[node]
-                        if definition:
-                            parse = parser_wrapper.parse_text(definition, node)
-                            deps = parse[0]
-                            corefs = parse[1]
-                            ud_G = ud_to_nx(deps)
-                            # filter_ud(ud_G, blacklist)
-                            deps = nx_to_ud(ud_G)
-                            if len(deps[0]) > 0:
-                                def_graph = dep_to_4lang.get_machines_from_deps_and_corefs(
-                                    deps, corefs)
-                                graph.merge_definition_graph(def_graph, d_node)
-                                self.expanded[node] = def_graph
-
-    def substitute(self, graph, dep_to_4lang, parser_wrapper, depth=1, blacklist=[], filt=True, black_or_white="white", rarity=False, substituted=[]):
         if depth == 0:
             return
         static_blacklist = ["a", "A", "b", "B"]
@@ -328,32 +306,22 @@ class Lexicon:
                     if node not in self.lexicon:
                         node = node.lower()
                 node_ok = not filt
-                if black_or_white.lower() == "white" and d_node in whitelist:
+                if (black_or_white.lower() == "white" and d_node in whitelist) or (depth > apply_from_depth):
                     node_ok = True
-                elif black_or_white.lower() == "black" and node not in one_two_blacklist:
+                elif (black_or_white.lower() == "black" and node not in one_two_blacklist) or (depth > apply_from_depth):
                     node_ok = True
 
-                if node not in self.stopwords and node in self.longman_definitions and node not in self.fourlang_definitions and node_ok and node not in static_blacklist and node not in substituted:
+                if node not in self.stopwords and node in self.lexicon and node not in self.fourlang_definitions and node_ok and node not in static_blacklist and node not in substituted:
                     if node in self.reduced:
                         def_graph = self.reduced[node]
                         graph.merge_definition_graph(
                             def_graph, d_node, substitute=True)
-                    else:
-                        if node in self.longman_definitions:
-                            definition = self.longman_definitions[node]["senses"][0]["definition"]["sen"]
+                    else:                      
+                        definition = self.lexicon[node]
                         if definition:
-                            parse = parser_wrapper.parse_text(definition, node)
-                            if blacklist:
-                                deps = filter_graph(parse[0], blacklist)
-                            else:
-                                deps = parse[0]
-                            corefs = parse[1]
-                            ud_G = ud_to_nx(deps)
-                            # filter_ud(ud_G, blacklist)
-                            deps = nx_to_ud(ud_G)
-                            if len(deps[0]) > 0:
-                                def_graph = dep_to_4lang.get_machines_from_deps_and_corefs(
-                                    deps, corefs)
+
+                            def_graph = irtg_parser(definition)
+                            if len(def_graph.get_nodes()) > 0:
                                 graph.merge_definition_graph(
                                     def_graph, d_node, substitute=True)
                                 substituted.append(node)
@@ -363,17 +331,15 @@ class Lexicon:
             node = graph.d_clean(d_node).split('_')[0]
             if node in self.fourlang_definitions:
                 nx.set_node_attributes(graph.G, {d_node: {'fourlang': True}})
-        self.substitute(graph, dep_to_4lang, parser_wrapper,
-                        depth-1, blacklist, filt, black_or_white, rarity, substituted)
+        self.substitute(graph, irtg_parser,
+                        depth-1, blacklist, filt, black_or_white, apply_from_depth)
 
-    def expand(self, graph, dep_to_4lang, parser_wrapper, depth=1, blacklist=[], filt=True, black_or_white="white", apply_from_depth=None, irtg_parser=False, rarity=False):
+    def expand(self, graph, irtg_parser, depth=1, blacklist=[], filt=True, black_or_white="white", apply_from_depth=None):
+        if depth == 0:
+            return
+        
         if apply_from_depth == None:
             apply_from_depth = depth
-
-        if depth == 0:
-            if rarity:
-                self.rarity_check(graph, dep_to_4lang, parser_wrapper)
-            return
 
         static_blacklist = ["a", "A", "b", "B"]
 
@@ -402,32 +368,18 @@ class Lexicon:
                         def_graph = self.expanded[node]
                         graph.merge_definition_graph(def_graph, d_node)
                     else:
-                        definition = self.lexicon[node]
-                        if definition:
-                            if irtg_parser:
+                        for definition in self.lexicon_list[node]:
+                            if definition:
                                 def_graph = irtg_parser(definition)
                                 if len(def_graph.get_nodes()) > 0:
                                     graph.merge_definition_graph(
                                         def_graph, d_node)
                                     self.expanded[node] = def_graph
-                            else:
-                                parse = parser_wrapper.parse_text(
-                                    definition, node)
-                                deps = filter_graph(parse[0], blacklist)
-                                corefs = parse[1]
-                                ud_G = ud_to_nx(deps)
-                                # filter_ud(ud_G, blacklist)
-                                deps = nx_to_ud(ud_G)
-                                if len(deps[0]) > 0:
-                                    def_graph = dep_to_4lang.get_machines_from_deps_and_corefs(
-                                        deps, corefs)
-                                    graph.merge_definition_graph(
-                                        def_graph, d_node)
-                                    self.expanded[node] = def_graph
+                                    break
 
-        self.expand(graph, dep_to_4lang, parser_wrapper,
-                    depth-1, blacklist, filt, black_or_white, apply_from_depth, irtg_parser, rarity)
-
+        self.expand(graph, irtg_parser,
+                    depth-1, blacklist, filt, black_or_white, apply_from_depth)
+                            
     def save_expanded(self, path):
         with open(path, 'wb') as handle:
             pickle.dump(self.expanded, handle,
@@ -495,14 +447,12 @@ class Lexicon:
 
         return graphs_expanded + graphs_substituted
 
-    def expand_with_every_def(self, graph, dep_to_4lang, parser_wrapper, depth=1, blacklist=[], filt=True, black_or_white="white", apply_from_depth=None, irtg_parser=False, rarity=False):
+    def expand_with_every_def(self, graph, irtg_parser, depth=1, blacklist=[], filt=True, black_or_white="white", apply_from_depth=None):
+        if depth == 0:
+            return
+        
         if apply_from_depth == None:
             apply_from_depth = depth
-
-        if depth == 0:
-            if rarity:
-                self.rarity_check(graph, dep_to_4lang, parser_wrapper)
-            return
 
         static_blacklist = ["a", "A", "b", "B"]
 
@@ -542,21 +492,9 @@ class Lexicon:
                                         irtg_graph, d_node)
                                     self.expanded_with_every_def[node].append(
                                         irtg_graph)
-                                else:
-                                    parse = parser_wrapper.parse_text(
-                                        definition, node)
-                                    deps = filter_graph(parse[0], blacklist)
-                                    corefs = parse[1]
-                                    ud_G = ud_to_nx(deps)
-                                    # filter_ud(ud_G, blacklist)
-                                    deps = nx_to_ud(ud_G)
-                                    if len(deps[0]) > 0:
-                                        def_graph = dep_to_4lang.get_machines_from_deps_and_corefs(
-                                            deps, corefs)
-                                        graph.merge_definition_graph(
-                                            def_graph, d_node)
-                                        self.expanded_with_every_def[node].append(
-                                            def_graph)
 
-        self.expand(graph, dep_to_4lang, parser_wrapper,
-                    depth-1, blacklist, filt, black_or_white, apply_from_depth, irtg_parser, rarity)
+        self.expand(graph, irtg_parser,
+                                   depth-1, blacklist, filt, black_or_white, apply_from_depth)
+
+
+

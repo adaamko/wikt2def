@@ -1,7 +1,7 @@
 streamlit
 flask
 networkx
-stanfordnlp
+stanza
 nltk
 graphviz
 sklearn
