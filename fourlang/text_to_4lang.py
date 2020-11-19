@@ -132,6 +132,14 @@ class TextTo4lang():
 
         return graph
 
+
+    def get_hypothesis(self, text):
+        graph = self.process_text_with_IRTG(text)
+
+        processed_graphs = self.lexicon.substitute_hypothesis_with_every_def(graph, self.process_text_with_IRTG)
+
+        return processed_graphs
+
     def process_text(self, text, method="default", depth=1, blacklist=[], filt=True, multi_definition=False, black_or_white="white", apply_from_depth=None, irtg=False, rarity=False):
         logging.info("parsing text...")
         if not irtg:

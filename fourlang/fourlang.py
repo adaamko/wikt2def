@@ -62,21 +62,22 @@ class FourLang():
                 self.G.remove_node(node)
 
     def merge_definition_graph(self, graph, node, substitute=False):
-        graph_root = graph.root
-        #graph.G = nx.relabel_nodes(graph.G, {graph_root: self.root})
-        attrs = {}
-        if substitute:
-            self.G = nx.relabel_nodes(self.G, {node: graph_root})
-            if node == self.root:
-                self.root = graph_root
-            #attrs = {graph_root: {'substituted': True}}
-        else:
-            self.G.add_edge(node, graph_root, color=0)
-            attrs = {node: {'expanded': True}}
-        F = nx.compose(self.G, graph.G)
-        self.G = F
-        if attrs:
-            nx.set_node_attributes(self.G, attrs)
+        if graph.root != None:
+            graph_root = graph.root
+            #graph.G = nx.relabel_nodes(graph.G, {graph_root: self.root})
+            attrs = {}
+            if substitute:
+                self.G = nx.relabel_nodes(self.G, {node: graph_root})
+                if node == self.root:
+                    self.root = graph_root
+                #attrs = {graph_root: {'substituted': True}}
+            else:
+                self.G.add_edge(node, graph_root, color=0)
+                attrs = {node: {'expanded': True}}
+            F = nx.compose(self.G, graph.G)
+            self.G = F
+            if attrs:
+                nx.set_node_attributes(self.G, attrs)
 
     def merge(self, graph):
         F = nx.compose(self.G, graph.G)
