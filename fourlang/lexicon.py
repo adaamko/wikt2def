@@ -170,11 +170,11 @@ class Lexicon:
                     defi = line[2].strip().strip("\n")
                     defi = self.parse_definition(defi)
                     if line[0].strip() not in self.lexicon:
-                        def_splitted = defi.strip().split(";")[0]
+                        def_splitted = defi.strip()#.split(";")[0]
                         self.lexicon[word] = def_splitted
                         self.lexicon_list[word] = []
                     if defi.strip() != word:
-                        def_splitted = defi.strip().split(";")
+                        def_splitted = [defi.strip()]#.split(";")
                         for def_split in def_splitted:
                             if (def_split not in self.lexicon_list[word]) and len(self.lexicon_list[word]) < 12:
                                 self.lexicon_list[word].append(def_split)
@@ -311,7 +311,7 @@ class Lexicon:
                 elif (black_or_white.lower() == "black" and node not in one_two_blacklist) or (depth > apply_from_depth):
                     node_ok = True
 
-                if node not in self.stopwords and node in self.lexicon and node not in self.fourlang_definitions and node_ok and node not in static_blacklist and node not in substituted:
+                if (node not in self.stopwords or d_node == graph.root) and node in self.lexicon and node not in self.fourlang_definitions and node_ok and node not in static_blacklist and node not in substituted:
                     if node in self.reduced:
                         def_graph = self.reduced[node]
                         graph.merge_definition_graph(
@@ -363,7 +363,7 @@ class Lexicon:
                     node_ok = True
                 elif (black_or_white.lower() == "black" and node not in one_two_blacklist) or (depth > apply_from_depth):
                     node_ok = True
-                if node not in self.stopwords and node in self.lexicon and node_ok and node not in static_blacklist:
+                if(node not in self.stopwords or d_node == graph.root) and node in self.lexicon and node_ok and node not in static_blacklist:
                     if node in self.expanded:
                         def_graph = self.expanded[node]
                         graph.merge_definition_graph(def_graph, d_node)
@@ -409,7 +409,7 @@ class Lexicon:
                 if node not in self.lexicon:
                     node = node.lower()
 
-            if node not in self.stopwords and node in self.lexicon_list and node not in static_blacklist:
+            if (node not in self.stopwords or d_node == graph.root) and node in self.lexicon_list and node not in static_blacklist:
                 node_lengths.append(len(self.lexicon_list[node]))
                 d_nodes.append(d_node)
                 if node in self.expanded_with_every_def:
