@@ -34,8 +34,8 @@ def ud_to_nx(ud):
     for dep in iter_ud:
         for dependency in dep:
             t = dependency[0]
-            sender = "_".join(dependency[1])
-            receiver = "_".join(dependency[2])
+            sender = "_".join([str(d) for d in dependency[1]])
+            receiver = "_".join([str(d) for d in dependency[2]])
             if sender not in nodes:
                 G.add_node(sender)
                 nodes.add(sender)

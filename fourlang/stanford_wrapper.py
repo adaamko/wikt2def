@@ -13,6 +13,7 @@ class StanfordParser():
         self.parse = {}
 
     def parse_text(self, text, word=None):
+        print(text)
         if word and word in self.parse:
             deps = self.parse[word]
         else:
