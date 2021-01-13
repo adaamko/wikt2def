@@ -237,24 +237,16 @@ class Lexicon:
         if not from_node:
             from_node = graph.root
         whitelist = []
-        zero_graph = copy.deepcopy(graph)
+        zero_graph = nx.MultiDiGraph()
+        zero_graph.add_node(from_node)
         delete_list = []
-        for edge in zero_graph.G.adj.items():
-            for output_node in edge[1].items():
-                inner_delete_list = []
-                for edge_type in output_node[1].items():
-                    if edge_type[1]["color"]:
-                        inner_delete_list.append(edge_type[0])
-                for inner_del in inner_delete_list:
-                    del output_node[1]._atlas[inner_del]
-                if len(output_node[1]) < 1:
-                    delete_list.append(output_node[0])
-            for to_del in delete_list:
-                if to_del in edge[1]._atlas:
-                    del edge[1]._atlas[to_del]
+        for edge in graph.G.edges(data=True):
+            if not edge[2]["color"]:
+                zero_graph.add_edge(edge[0], edge[1])
+                
 
-        for node in zero_graph.G.nodes():
-            if algorithms.has_path(zero_graph.G, from_node, node):
+        for node in zero_graph.nodes():
+            if algorithms.has_path(zero_graph, from_node, node):
                 if node != from_node:
                     whitelist.append(node)
 
