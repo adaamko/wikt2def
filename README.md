@@ -68,33 +68,6 @@ Also it contains code to reproduce our results on the lexical entailment task on
  ## Reproduce our results
  The **Config** column contains the specific config file to run our code with. Also in some cases it contains a specific file with the results (the ones ending with .csv)
  
- ### Semeval
- <div id="table:semeval_results">
-
-| <span>**Lang**</span> | <span>**Method** </span> |     <span>**P**</span> |     <span>**R**</span> |     <span>**F**</span> | Config  |
-| :-------------------- | :----------------------- | ---------------------: | ---------------------: | ---------------------: | -: |
-|         EN              | always yes               |                  56.33 |                  100.0 |                  72.07 |  |
-|         EN              | WordNet                  |                  95.75 |                  88.76 |                  92.12 |semeval_en_wordnet  |
-|         EN              | 4lang                    | <span>**96.30**</span> |                  29.21 |                  44.83 | semeval_en_only_4lang |
-|         EN              | 4lang\_syn               |                  92.85 |                  36.51 |                  52.41 | semeval_en_OR |
-|         EN              | all                      |                  93.22 | <span>**92.69**</span> | <span>**92.95**</span> |semeval_en_OR_voting  |
-|         DE              | always yes               |                  37.11 |                  100.0 |                  54.13 |  |
-|         DE              | WordNet                  |                  61.61 |                  79.22 |                  69.31 | semeval_de_only_wordnet |
-|         DE              | 4lang                    | <span>**88.88**</span> |                  36.36 |                  51.61 | semeval_de_only_4lang |
-|         DE              | 4lang\_syn               |                  87.87 |                  37.66 |                  52.72 | semeval_de |
-|         DE              | all                      |                  61.86 | <span>**86.36**</span> | <span>**72.08**</span> | semeval_de_voting |
-|         IT              | always yes               |                  41.67 |                  100.0 |                  58.82 |  |
-|         IT              | WordNet                  |                  88.96 |                  75.88 |                  81.90 | semeval_it_wordnet |
-|         IT              | 4lang                    | <span>**93.47**</span> |                  25.29 |                  39.81 |semeval_it_only_4lang  |
-|         IT              | 4lang\_syn               |                  81.17 |                  40.58 |                  54.11 | semeval_it_OR |
-|         IT              | all                      |                  83.92 | <span>**82.94**</span> | <span>**83.43**</span> | semeval_it_OR_voting |
-
-Performance on the Semeval development set. `4lang` and `4lang_syn` is
-our method without and with additional synonym nodes from WordNet and
-Wiktionary. `WordNet` is the baseline using WordNet hypernyms, `all` is
-the union of `4lang+syn` and `WordNet`
-
-</div>
 
  ### Sherlic
  
