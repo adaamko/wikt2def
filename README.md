@@ -34,18 +34,10 @@ Also it contains code to reproduce our results on the lexical entailment task on
    ```bash
    bash quicksetup.sh
    ```
-3) To be able to build fourlang graphs, the ud service needs to be started (supported languages: en, it, de)
-   ```python
-   python fourlang/service/ud_service.py -l en -p 5005
-   ```
-4) If you are only interested in building 4lang graphs, the ```demo.ipynb``` jupyter notebook shows a simple setup and examples.
+3) If you are only interested in building 4lang graphs, the ```demo.ipynb``` jupyter notebook shows a simple setup and examples.
 
-5) To reproduce our results, first start the servers respectively:
-   ```python
-   python fourlang/service/ud_service.py -l en -p 5005
-   python fourlang/service/ud_service.py -l de -p 5006
-   python fourlang/service/ud_service.py -l it -p 5007
-   ```
+4) To reproduce our results, first install the tuw-nlp repository: https://github.com/recski/tuw-nlp
+
   Then the '''process.py''' file can be used to generate results.
 
 
@@ -105,5 +97,3 @@ evaluated that wasn’t tuned on SherLlic’s held-out portion and
 To reproduce the result of the original SherLIiC paper, please go to: https://github.com/mnschmit/SherLIiC. We also provide precomputed results in the results directory.
 
 </div>
-
-***Please note that as of now the code doesn't contain caching of the ud parses which may result in longer running time. We plan on optimizing it for further development.***
