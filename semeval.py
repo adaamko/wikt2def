@@ -10,6 +10,7 @@ from nltk.corpus import wordnet as wn
 from sklearn.metrics import precision_recall_fscore_support as pr
 from sklearn.metrics import confusion_matrix as cm
 from tqdm import tqdm
+from pygermanet import load_germanet
 
 from fourlang.lexicon import Lexicon
 from fourlang.text_to_4lang import TextTo4lang
@@ -102,59 +103,72 @@ def process_fourlang_votes(text_to_4lang, language, data_frame, synonyms, filter
 
 
 def process_de(data_frame, fourlang_votes):
+    def get_hypernyms(synset):
+        hypernyms = set()
+        for hypernym in synset.hypernyms:
+            hypernyms |= set(get_hypernyms(hypernym))
+        return hypernyms | set(synset.hypernyms)
+
+    gn = load_germanet()
     preds = []
     for j in tqdm(range(len(data_frame))):
         index = j
         premise = data_frame.premise[index]
         hypothesis = data_frame.hypothesis[index]
 
-        hyp_syn_names_all = []
-        hyper_premise_names_all = []
+        hyp_syn_names_all = [hypothesis]
+        hyper_premise_names_all = [premise]
 
-        premises = []
-        hypothesises = []
+        # premises = []
+        # hypothesises = []
 
-        if premise in dictionary:
-            premise = dictionary[premise]
-            premises += premise
-        if hypothesis in dictionary:
-            hypothesis = dictionary[hypothesis]
-            hypothesises += hypothesis
+        # if premise in dictionary:
+        #     premise = dictionary[premise]
+        #     premises += premise
+        # if hypothesis in dictionary:
+        #     hypothesis = dictionary[hypothesis]
+        #     hypothesises += hypothesis
 
-        for premise in premises:
 
-            premise_syns = wn.synsets(premise)
-            """
-            if len(premise_syns) > 0 and len(hyp_syns) > 0:
-                en_premise = premise_syns[0].lemmas()[0].name()
-                en_hyp = hyp_syns[0].lemmas()[0].name()
-                fourlang_score = get_4lang_score(en_premise, en_hyp)
-            else:
-                fourlang_score = 0
-            """
+        premise_syns = gn.synsets(premise)
+        if not premise_syns:
+            premise_syns = gn.synsets(str(premise).capitalize())
+        """
+        if len(premise_syns) > 0 and len(hyp_syns) > 0:
+            en_premise = premise_syns[0].lemmas()[0].name()
+            en_hyp = hyp_syns[0].lemmas()[0].name()
+            fourlang_score = get_4lang_score(en_premise, en_hyp)
+        else:
+            fourlang_score = 0
+        """
 
-            for premise_syn in premise_syns:
+        for premise_syn in premise_syns:
 
-                hyperpremise = set(
-                    [i for i in premise_syn.closure(lambda s:s.hypernyms())])
+            hyperpremise = get_hypernyms(premise_syn)
 
-                hyper_premise_lemmas = []
-                for i in hyperpremise:
-                    lemmas = i.lemmas()
-                    for lemm in lemmas:
-                        hyper_premise_lemmas.append(lemm)
+            hyper_premise_lemmas = []
+            for i in hyperpremise:
+                lemmas = i.lemmas
+                for lemm in lemmas:
+                    hyper_premise_lemmas.append(lemm)
 
-                hyper_premise_names = set([i.name()
-                                           for i in hyper_premise_lemmas])
-                hyper_premise_names_all += list(hyper_premise_names)
+            hyper_premise_names = set([i.orthForm.lower()
+                                        for i in hyper_premise_lemmas])
+            hyper_premise_names_all += list(hyper_premise_names)
 
-        for hypothesis in hypothesises:
-            hyp_syns = wn.synsets(hypothesis)
-            for hyp_syn in hyp_syns:
-                hyp_syn_lemmas = hyp_syn.lemmas()
-                hyp_syn_names = set([i.name() for i in hyp_syn_lemmas])
+        hyp_syns = gn.synsets(hypothesis)
+        for hyp_syn in hyp_syns:
+            hyp_syn_lemmas = hyp_syn.lemmas
+            hyp_syn_names = set([i.orthForm.lower() for i in hyp_syn_lemmas])
 
-                hyp_syn_names_all += list(hyp_syn_names)
+            hyp_syn_names_all += list(hyp_syn_names)
+
+        # print(f"hyp: {hyp_syn_names_all}")
+        # print(hyper_premise_names_all)
+
+        # print(f"premise: {premise}, hypothesis: {hypothesis}")
+        # print(f"prem: {hyper_premise_names_all}")
+        # print(f"hyp: {hyp_syn_names_all}")
 
         if (set(hyp_syn_names_all) & set(hyper_premise_names_all)
             ) or fourlang_votes[index] == 1:

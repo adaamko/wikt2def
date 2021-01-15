@@ -21,8 +21,11 @@ def load_vec(emb_path, nmax=50000):
     return embeddings, id2word, word2id
 
 
-def read(lang1, lang2=None, graded=True):
-    filename = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../SemEval2020-Task2-Dev")
+def read(lang1, lang2=None, graded=True, test=True):
+    if test:
+        filename = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../SemEval2020-Task2-Test")
+    else:
+        filename = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../SemEval2020-Task2-Dev")
     language_name = ""
     if lang2 is None:
         filename = os.path.join(filename, "monolingual")
@@ -31,7 +34,10 @@ def read(lang1, lang2=None, graded=True):
         filename = os.path.join(filename, "cross-lingual")
         language_name = "-".join([lang1, lang2]) if lang1[0] < lang2[0] else "-".join([lang2, lang1])
     grad_or_bin = "graded" if graded else "binary"
-    filename = os.path.join(filename, grad_or_bin, ".".join([language_name, grad_or_bin, "dev.data.txt"]))
+    if test:
+        filename = os.path.join(filename, grad_or_bin, ".".join([language_name, grad_or_bin, "test.data.gold.txt"]))
+    else:
+        filename = os.path.join(filename, grad_or_bin, ".".join([language_name, grad_or_bin, "dev.data.txt"]))
     df = pd.read_csv(filename, delimiter=" ", header=None, names=["premise", "hypothesis", "score"])
     # if lang2 is not None:
     #     df.premise = df.premise.str.replace(lang1 + "_", "")

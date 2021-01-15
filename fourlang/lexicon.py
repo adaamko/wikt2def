@@ -4,6 +4,7 @@ from nltk.corpus import stopwords as nltk_stopwords
 from networkx import algorithms
 from nltk.corpus import wordnet as wn
 from statistics import mean
+from pygermanet import load_germanet
 import re
 import logging
 import copy
@@ -132,7 +133,8 @@ class Lexicon:
                     elif lang == "de":
                         synsets = []
                     else:
-                        synsets = wn.synsets(word, lang=lang)
+                        gn = load_germanet()
+                        synsets = gn.synsets(word)
                     
                     lemmas = []
                     for i in synsets:
