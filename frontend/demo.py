@@ -111,10 +111,10 @@ def main():
         dot = result["graph"]
         ud_graph = result["ud"]
         
-        st.text(f'UD graph: {", ".join(result["graph"])}')
+        st.text(f'UD graph:')
         #dot = json_graph.adjacency_graph(ph
         st.graphviz_chart(ud_graph, use_container_width=True)
-        st.text(f'Fourlang graph: {", ".join(result["graph"])}')
+        st.text(f'Fourlang graph:')
         st.graphviz_chart(dot, use_container_width=True)
 
     if word:
