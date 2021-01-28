@@ -1,4 +1,4 @@
-fom fourlang.text_to_4lang import TextTo4lang
+from fourlang.text_to_4lang import TextTo4lang
 from fourlang.lexicon import Lexicon
 from graphviz import Source
 
@@ -52,7 +52,7 @@ def build():
         depth = data["depth"]
         irtg_graph = text_to_4lang_en.process_text(text, method=method, depth=int(depth), filt=False, black_or_white="")
         sen = nlp(text).sentences[0]
-        ret_value["result"]["ud"] = visualize(doc).source
+        ret_value["result"]["ud"] = visualize(sen).source
         if irtg_graph:
             ret_value["result"]["graph"] = irtg_graph.to_dot()
     except Exception as e:
