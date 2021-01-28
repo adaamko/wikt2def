@@ -107,7 +107,7 @@ def main():
 
     result = build(text, method, depth)
     
-    if not result["errors"]
+    if not result["errors"]:
         dot = result["graph"]
         ud_graph = result["ud"]
         
