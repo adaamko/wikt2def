@@ -73,9 +73,9 @@ def to_dot(graph, marked_nodes=set()):
     return u'\n'.join(lines)
 
 @st.cache
-def build(text, method, depth):
+def build(text, method, depth, lang):
     host = f'{HOST}:{PORT}'
-    data_json = json.dumps({"text": text, "method": method, "depth": depth})
+    data_json = json.dumps({"text": text, "method": method, "depth": depth, "lang": lang})
     headers = {
         'Content-type': 'application/json',
     }
@@ -84,9 +84,9 @@ def build(text, method, depth):
 
     return result
 
-def get_definition(word):
+def get_definition(word, lang):
     host = f'{HOST}:{PORT}'
-    data_json = json.dumps({"text": word})
+    data_json = json.dumps({"text": word, "lang": lang})
     headers = {
         'Content-type': 'application/json',
     }
@@ -99,13 +99,14 @@ def get_definition(word):
 def main():
     st.sidebar.title("Select the parameters")
     method = st.sidebar.selectbox("Select Method", ["default", "expand", "substitute"])
+    lang = st.sidebar.selectbox("Select Language", ["en", "de"])
     depth = st.sidebar.number_input("Select Recursion depth", format="%i", value=0, min_value=0, max_value=3)
     word = st.sidebar.text_input("Get definition of a word: ")
     st.title("Build Fourlang graph from text")
 
     text = st.text_area("Input your own text here")
 
-    result = build(text, method, depth)
+    result = build(text, method, depth, lang)
     
     if not result["errors"]:
         dot = result["graph"]
@@ -118,7 +119,7 @@ def main():
         st.graphviz_chart(dot, use_container_width=True)
 
     if word:
-        definition = get_definition(word)
+        definition = get_definition(word, lang)
         if definition:
             st.text(definition["def"])
 

@@ -1,6 +1,6 @@
 import stanza
 import os
-
+from tuw_nlp.text.segmentation import CustomStanzaPipeline
 
 class ParserWrapper(object):
     def set_parser(self, language):
@@ -8,4 +8,8 @@ class ParserWrapper(object):
         if not os.path.exists(os.path.join(os.path.expanduser("~"),
                                            "stanza_resources/{}_models".format(language_model[language]))):
             stanza.download(language)
-        self.nlp = stanza.Pipeline(lang=language)
+
+        if language == "de":
+            self.nlp = CustomStanzaPipeline(processors='tokenize,pos,lemma,depparse')
+        else:
+            self.nlp = stanza.Pipeline(lang=language)

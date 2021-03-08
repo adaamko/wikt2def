@@ -12,7 +12,7 @@ from fourlang.utils import dep_to_dot
 from fourlang.fourlang import FourLang
 from networkx.readwrite import json_graph
 
-from tuw_nlp.grammar.ud_fl import UD_Fourlang
+from tuw_nlp.grammar.ud_fl import UD_Fourlang, UD_FL
 from tuw_nlp.graph.utils import read_alto_output
 
 __LOGLEVEL__ = 'INFO'
@@ -25,7 +25,11 @@ class TextTo4lang():
     def __init__(self, lang, serverless=True, port=5005):
         self.parser_wrapper = StanfordParser(lang, serverless, port)
         self.lexicon = Lexicon(lang)
-        self.ud_fl = UD_Fourlang()
+        self.lang = lang
+        if lang == "de":
+            self.ud_fl = UD_FL()
+        else:
+            self.ud_fl = UD_Fourlang()
         self.irtg_parse = {}
 
     def get_definition(self, word):
@@ -83,7 +87,10 @@ class TextTo4lang():
         else:
             try:
                 sen = self.parser_wrapper.parse_text_for_irtg(text)
-                fl = self.ud_fl.parse(sen, 'ud', 'fourlang', 'amr-sgraph-src')
+                if self.lang == "de":
+                    fl = self.ud_fl.parse(sen, 'ud', 'fl', 'amr-sgraph-src')
+                else:
+                    fl = self.ud_fl.parse(sen, 'ud', 'fourlang', 'amr-sgraph-src')
                 self.irtg_parse[text] = fl
             except IndexError as e:
                 print(e)
@@ -96,6 +103,7 @@ class TextTo4lang():
         output, root = None, None
         if fl:
             output, root = read_alto_output(fl)
+            print(output)
         graph = FourLang()
 
         if output and root:
@@ -111,7 +119,7 @@ class TextTo4lang():
 
         return processed_graphs
 
-    def process_text(self, text, method="default", depth=1, blacklist=[], filt=True, multi_definition=False, black_or_white="white", apply_from_depth=None, rarity=False):
+    def process_text(self, text, method="default", depth=1, blacklist=[], filt=True, multi_definition=False, black_or_white="white", apply_from_depth=None, rarity=False, lang="en"):
         logging.info("parsing text...")
 
         graph = self.process_text_with_IRTG(text)
