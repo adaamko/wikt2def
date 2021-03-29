@@ -1,4 +1,4 @@
-***If you are interested in the system submitted to the SemEval 2020 Task 2: Predicting Multilingual and Cross-Lingual (Graded) Lexical Entailment, please go to the Semeval branch for detailed instructions to reproduce our results. The master and the sherlic branch contain futher improvements and experiments on the SherLIiC: A Typed Event-Focused Lexical Inference Benchmark for Evaluating Natural Language Inference dataset.***
+***This branch contains the necessary code to reproduce the results of the paper named Explainable lexical entailment with semantic graphs and submitted to the NLE journal***
 
 
 # wikt2def
@@ -36,7 +36,7 @@ Also it contains code to reproduce our results on the lexical entailment task on
    ```
 3) If you are only interested in building 4lang graphs, the ```demo.ipynb``` jupyter notebook shows a simple setup and examples.
 
-4) To reproduce our results, first install the tuw-nlp repository: https://github.com/recski/tuw-nlp
+4) To reproduce our results, first install the tuw-nlp repository of the branch _nle_: https://github.com/adaamko/tuw-nlp
 
   Then the '''process.py''' file can be used to generate results.
 
